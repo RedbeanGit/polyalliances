@@ -22,7 +22,7 @@ Une fois les logiciels installés, il va falloir télécharger le projet:
 2. Copie le chemin vers cet emplacement (clique dans le chemin affiché dans l'explorateur pour afficher le chemin réel)
 3. Ouvre une invite de commande (Windows + R > tape "cmd" > entrer)
 4. Tape la commande suivante ```cd emplacementChoisi``` en remplaçant *emplacementChoisi* par l'emplacement... que tu as choisi
-5. Tape la commande suivante ```git clone "https://github.com/RedbeanGit/polyalliance.git"```
+5. Tape la commande suivante ```git clone "https://github.com/RedbeanGit/polyalliances.git"```
 6. Patiente le temps que le projet soit entièrement téléchargé.
 
 Il ne reste plus qu'à ouvrir le projet dans Sublime Text 3 (File > Open Folder... > dossierContenantLeProjet).
@@ -31,4 +31,4 @@ Il ne reste plus qu'à ouvrir le projet dans Sublime Text 3 (File > Open Folder.
 
 Avant chaque session de code, il est **important** de récupérer la dernière version du projet en ligne. Dans Sublime Text 3, le curseur doit se trouver dans un fichier du projet (si ce n'est pas le cas ouvre un fichier du projet, n'importe lequel). Clique ensuite sur **master** en bas à droite de l'éditeur. Sublime Merge apparait. Il suffit alors de cliquer sur la flêche dirigée vers le bas (en haut à droite de la fenêtre de Sublime Merge) pour importer les dernières modifications qui ont été faites. Une fois importé, tu peux programmer.
 
-Après chaque session de code, il est **important** de sauvegarder et envoyer les modifications sur Github. Pour ça, il te suffit de cliquer sur **master** en bas à droite de l'éditeur de Sublime Text 3. Sublime Merge apparait. Si tu as ajouté de nouveaux fichiers pendant cette session, passe ta souris sur l'un d'eux (dans Sublime Merge) et clique sur **Stage All**. Ensuite, il suffit de donner une brève explication sur les modifs effectuées (exemple: *Optimisation de l'affichage*) et de cliquer sur **master** en haut de la fenêtre de Sublime Merge pour sauvegarder le projet. Il ne reste plus qu'à tout envoyer sur Github en cliquant sur la flêche dirigée vers le haut (en haut à droite de la fenêtre de Sublime Merge). Une fois envoyer tu peux tout fermer.
+Après chaque session de code, il est **important** de sauvegarder et envoyer les modifications sur Github. Pour ça, il te suffit de cliquer sur **master** en bas à droite de l'éditeur de Sublime Text 3. Sublime Merge apparait. Si tu as ajouté de nouveaux fichiers pendant cette session, passe ta souris sur l'un d'eux (dans Sublime Merge) et clique sur **Stage All**. Ensuite, il suffit de donner une brève explication sur les modifs effectuées (exemple: *Optimisation de l'affichage*) et de cliquer sur **commit X file(s)**. Il ne reste plus qu'à tout envoyer sur Github en cliquant sur la flêche dirigée vers le haut (en haut à droite de la fenêtre de Sublime Merge). Lors du premier envoie, tes informations de connexion à Github vont être demandés. Une fois envoyé tu peux tout fermer.
