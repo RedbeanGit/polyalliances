@@ -9,3 +9,5 @@
 """ Contient toutes les constantes du jeu """
 
 DEBUG=True
+VALEURS=("A", "R", "D", "V", 10, 9, 8, 7, 6, 5, 4, 3, 2)
+COULEURS={"P": "♠", "K": "♦", "C": "♥", "T": "♣"}
