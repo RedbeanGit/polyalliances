@@ -40,6 +40,7 @@ def afficher_reussite(reussite):
 		reussite (list): Liste contenant les cartes à afficher """
 	
 	print(*map(carte_to_chaine, reussite))
+	print()
 
 
 def init_pioche_fichier(chemin_fichier):
@@ -145,41 +146,3 @@ def une_etape_reussite(liste_tas, pioche, affiche=False):
 	
 			num_tas = 0
 		num_tas += 1
-
-
-def choisir_numero(mini, maxi):
-	""" Renvoie un entier compris entre mini et maxi demandé au joueur.
-		(fonction auxilière)
-
-		mini (int): Entier minimal accepté
-		maxi (int): Entier maximal """
-
-	mode = input("> ")
-
-	while True:
-		try:
-			mode = int(mode)
-
-			if mode >= mini and mode <= maxi:
-				return mode
-			else:
-				print(f"Choix invalide, vous devez entrer un entier compris entre {mini} et {maxi}.")
-
-		except ValueError:
-			print(f"Choix invalide, vous devez entrer un entier compris entre {mini} et {maxi}.")
-		mode = input("> ")
-
-
-def afficher_menu(titre, *choix):
-	""" Affiche un menu avec un titre personnalisé et retourne le numéro associé au choix du joueur.
-		(fonction auxilière)
-
-		titre (str): Le titre à afficher
-		choix (*str): Les options proposées au joueur """
-
-	print(titre)
-	
-	for i, action in enumerate(choix):
-		print(f"{i+1}. {action}")
-
-	return choisir_numero(1, len(choix))

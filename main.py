@@ -8,18 +8,12 @@
 
 """ Script principal du jeu """
 
-from fonction import *
+import config
+import time
 
-
-def main():
-	""" Fonction principale du jeu. Ne prend aucun argument """
-	
-	print("Bienvenu dans La réussite des alliances !")
-	mode = afficher_menu("Choisissez un mode de jeu", "Manuel", "Automatique", "Quitter")
-
-	if mode != 3:
-		lance_reussite(mode)
-	print("Fin du jeu")
+from gfx import *
+from console import *
+from jeu import *
 
 
 def reussite_mode_auto(pioche, affichage=False):
@@ -31,8 +25,8 @@ def reussite_mode_auto(pioche, affichage=False):
 			par défaut) """
 
 	if affichage:
+		faire_parler("Voici la pioche", config.NOM_ORDI)
 		afficher_reussite(pioche)
-		print()
 
 	reussite = []
 
@@ -50,41 +44,43 @@ def reussite_mode_manuel(pioche, nb_tas_max=2):
 	reussite = []
 
 	while pioche:
-		mode = afficher_menu(
+		mode = demander_qcm(
 			"Choisissez une action", 
 			"Piocher une carte", 
 			"Effectuer un saut", 
 			"Réafficher le jeu", 
 			"Quitter")
 
-		if mode == 1:
+		if mode == 0:
 			piocher(reussite, pioche)
-		elif mode == 2:
-			if len(reussite) >= 3:
-				print(f"Entrez le numéro du tas à faire sauter (compris entre 1 et {len(reussite)-2})")
-				saut = choisir_numero(1, len(reussite)-2)
+
+		elif mode == 1:
+			if len(reussite) >= 3: # on propose de faire sauter une carte uniquement s'il y en a au moins 3
+				saut = demander_entier(
+					f"Quel tas faire sauter ? (ne s'applique ni au 1er ni au dernier tas)",
+					1, len(reussite) - 2)
 
 				if saut_si_possible(reussite, saut):
-					print("Un saut a été effectué !")
+					faire_parler("Un saut a été effectué !", config.NOM_ORDI)
 				else:
-					print("Impossible de faire sauter ce tas")
+					faire_parler("Impossible de faire sauter ce tas !", config.NOM_ORDI)
 			else:
-				print("Il n'y a pas assez de cartes pour tenter un saut !")
-		elif mode == 4:
-			print("Fin de partie !")
+				faire_parler("Il n'y a pas assez de cartes pour tenter un saut !", config.NOM_ORDI)
+
+		elif mode == 3:
+			faire_parler("Vous avez quitté la partie !", config.NOM_ORDI)
 			return None
 
-		print("\nTas visibles: ", end="")
+		faire_parler("Voici les tas visibles", config.NOM_ORDI)
 		afficher_reussite(reussite)
-		print()
 
-	print("Le jeu est terminé !")
-	print(f"Il vous reste {len(reussite)} tas")
+	faire_parler("Le jeu est terminé !", config.NOM_ORDI)
+	faire_parler(f"Il vous reste {len(reussite)} tas", config.NOM_ORDI)
 
 	if len(reussite) > nb_tas_max:
-		print(f"Vous avez perdu !")
+		faire_parler("Vous avez perdu !", config.NOM_ORDI)
 	else:
-		print(f"Vous avez gagné !")
+		faire_parler("Vous avez gagné !", config.NOM_ORDI)
 
 
 def lance_reussite(mode, nb_cartes=32, affiche=False, nb_tas_max=2):
@@ -98,18 +94,75 @@ def lance_reussite(mode, nb_cartes=32, affiche=False, nb_tas_max=2):
 			par défaut)
 		nb_tas_max (int): Nombre de tas restant maximum pour gagner (2 par défaut) """
 	
-	depuis_fichier = afficher_menu("Charger la pioche depuis un fichier ?", "Oui", "Non")
+	depuis_fichier = bool(demander_qcm("Charger la pioche depuis un fichier ?", "Non", "Oui"))
 
-	if depuis_fichier == 1:
-		pioche = init_pioche_fichier(input("Chemin du fichier> "))
+	if depuis_fichier:
+		pioche = init_pioche_fichier(demander_chaine("Entrez le chemin vers le fichier à charger"))
 	else:
 		pioche = init_pioche_alea(nb_cartes)
-	print(pioche)
 
-	if mode == 1:
-		reussite_mode_manuel(pioche, nb_tas_max)
-	else:
+	if mode:
 		reussite_mode_auto(pioche, affiche)
+	else:
+		reussite_mode_manuel(pioche, nb_tas_max)
+
+
+def choisir_mode():
+	""" Demande le mode de jeu, le nombre de carte et d'autres informations essentielles au
+		démarrage du jeu.
+		Ne prend aucun argument. """
+
+	mode = demander_qcm("Quel mode ?", "Manuel", "Automatique")
+	jeu_type = 32 + 20 * demander_qcm("Quel jeu ?", "32 cartes", "52 cartes")
+
+	if mode:
+		faire_parler("Vous avez choisi le mode automatique", config.NOM_ORDI)
+		affiche = bool(demander_qcm("Voulez-vous activer l'affichage ?", "Non", "Oui"))
+		tas_max = 2
+	else:
+		faire_parler("Vous avez choisi le mode manuel", config.NOM_JOUEUR)
+		tas_max = demander_entier("Nombre de tas maximum pour gagner", 2, 32)
+		affiche = False
+
+	lance_reussite(mode, jeu_type, affiche, tas_max)
+
+
+def choisir_mode_gfx(fenetre, images):
+	""" Même chose que choisir_mode mais en mode graphique.
+
+		fenetre (pygame.surface.Surface): La fenêtre de jeu
+		images (dict): Le dictionnaire des images du jeu """
+
+	while True:
+		pass
+
+
+def main():
+	""" Fonction principale. Initialise l'interface et lance le jeu.
+		Ne prend aucun argument. """
+
+	gfx_mode = init_gfx()
+	
+	if gfx_mode and not config.FORCE_CONSOLE:
+		print("Le jeu est en mode graphique")
+
+		l, h = config.TAILLE_FENETRE
+		fenetre = creer_fenetre("PolyAlliances (Chargement...)", l, h)
+		text_charge = creer_image_texte("Chargement des images...", (255, 255, 255), 30)
+
+		effacer_gfx(fenetre)
+		dessiner_image(fenetre, text_charge, l // 2, h // 2, True, True)
+		mettre_a_jour_gfx()
+
+		print("Chargement des images...")
+		images = charger_images_jeu()
+		print("Chargement terminé")
+
+		choisir_mode_gfx(fenetre, images)
+	else:
+		print("Bienvenu dans La réussite des alliances !")
+		choisir_mode()
+		print("Fin du jeu")
 
 
 if __name__ == "__main__":
