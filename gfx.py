@@ -270,7 +270,7 @@ def creer_widgets_input(titre, fonction, fct_change, type_accepte=str, texte="")
 			try:
 				entree = type_accepte(texte)
 			except ValueError:
-				fct_change(texte)
+				fct_change(None)
 			else:
 				fonction(entree)
 		elif evenement.key == pygame.K_BACKSPACE:
@@ -287,8 +287,14 @@ def creer_widgets_input(titre, fonction, fct_change, type_accepte=str, texte="")
 	min_y = hf // 2 - 20
 
 	image = creer_image_texte(titre, couleur, 30)
-	widget = creer_widget(image, lf // 2, min_y - 75, 0.5, 0.5)
+	widget = creer_widget(image, lf // 2, min_y - 75, 0.5, 1)
 	widgets.append(widget)
+
+	if texte == None:
+		texte = ""
+		image = creer_image_texte("Entrée invalide", config.COULEUR_TEXTE, 18)
+		widget = creer_widget(image, lf // 2, min_y - 70, 0.5)
+		widgets.append(widget)
 
 	if texte:
 		image = creer_image_texte(texte, couleur, 22)
@@ -299,6 +305,45 @@ def creer_widgets_input(titre, fonction, fct_change, type_accepte=str, texte="")
 	widgets.append(widget)
 
 	action = creer_action("appui", quand_appui)
+	actions.append(action)
+
+	return widgets, actions
+
+
+def creer_widgets_input_fichier(titre, fonction, fct_change, texte="", existe=True):
+	""" Crée et renvoie une liste de widgets ainsi que leur action associée en proposant au joueur
+			d'entrer le chemin vers un fichier ou de glisser déposer.
+
+		titre (str): Le message à afficher
+		fonction (function, method): La fonction à executer une fois la touche entrée pressée
+		fct_change (function, method): La fonction à executer à chaque changement du texte
+		texte (str): Le texte déjà tapé ('' par défaut)
+		existe (bool): Si True, execute 'fonction' uniquement si le fichier existe """
+
+	def quand_drop(evenement):
+		fonction(evenement.file)
+
+	def quand_valide(chemin):
+		if not existe or fichier_existe(chemin):
+			fonction(chemin)
+		else:
+			fct_change(None)
+
+	lf, hf = config.TAILLE_FENETRE
+	min_y = hf // 2 - 20
+	widget = None
+
+	if texte == None:
+		texte = ""
+		image = creer_image_texte("Chemin invalide", config.COULEUR_TEXTE, 18)
+		widget = creer_widget(image, lf // 2, min_y - 70, 0.5)
+
+	widgets, actions = creer_widgets_input(titre, quand_valide, fct_change, texte=texte)
+
+	if widget:
+		widgets.append(widget)
+
+	action = creer_action("drop", quand_drop)
 	actions.append(action)
 
 	return widgets, actions
