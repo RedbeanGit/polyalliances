@@ -38,7 +38,7 @@ def afficher_reussite(reussite):
 	""" Affiche les cartes de la réussite les unes à côté des autres.
 		
 		reussite (list): Liste contenant les cartes à afficher """
-	
+
 	print(*map(carte_to_chaine, reussite))
 	print()
 
@@ -47,7 +47,7 @@ def init_pioche_fichier(chemin_fichier):
 	""" Renvoie la liste des cartes écrites dans un fichier.
 		
 		chemin_fichier (str): Chemin vers le fichier contenant la liste des cartes """
-	
+
 	with open(chemin_fichier, "r") as fichier:
 		cartes = [carte_from_chaine(chaine) for chaine in fichier.read().split() if chaine]
 	return cartes
@@ -77,9 +77,7 @@ def genere_jeu(nb_cartes=32):
 			cartes.append({"valeur": valeur, "couleur": couleur})
 
 			if len(cartes) == nb_cartes:
-				break
-
-	return cartes
+				return cartes
 
 
 def init_pioche_alea(nb_cartes=32):

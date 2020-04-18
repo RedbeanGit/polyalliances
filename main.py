@@ -16,6 +16,8 @@ from evenement import *
 from gfx import *
 from jeu import *
 
+from utile import deboggue
+
 
 ###################################################################################################
 ### Mode console ##################################################################################
@@ -30,7 +32,7 @@ def reussite_mode_auto(pioche, affichage=False):
 			par défaut) """
 
 	if affichage:
-		faire_parler("Voici la pioche", config.NOM_ORDI)
+		dire("Voici la pioche")
 		afficher_reussite(pioche)
 
 	reussite = []
@@ -53,7 +55,7 @@ def reussite_mode_manuel(pioche, nb_tas_max=2):
 	piocher(reussite, pioche)
 
 	while pioche:
-		faire_parler("Voici les tas visibles", config.NOM_ORDI)
+		dire("Voici les tas visibles")
 		afficher_reussite(reussite)
 
 		mode = demander_qcm(
@@ -68,25 +70,25 @@ def reussite_mode_manuel(pioche, nb_tas_max=2):
 
 		elif mode == 1:
 			saut = demander_entier(
-				f"Quel tas faire sauter ? (ne s'applique ni au 1er ni au dernier tas)",
+				"Quel tas faire sauter ? (ne s'applique ni au 1er ni au dernier tas)",
 				1, len(reussite) - 2)
 
 			if saut_si_possible(reussite, saut):
-				faire_parler("Un saut a été effectué !", config.NOM_ORDI)
+				dire("Un saut a été effectué !")
 			else:
-				faire_parler("Impossible de faire sauter ce tas !", config.NOM_ORDI)
+				dire("Impossible de faire sauter ce tas !")
 
 		elif mode == 3:
-			faire_parler("Vous avez quitté la partie !", config.NOM_ORDI)
+			dire("Vous avez quitté la partie !")
 			return None
 
-	faire_parler("Le jeu est terminé !", config.NOM_ORDI)
-	faire_parler(f"Il vous reste {len(reussite)} tas", config.NOM_ORDI)
+	dire("Le jeu est terminé !")
+	dire(f"Il vous reste {len(reussite)} tas")
 
 	if len(reussite) > nb_tas_max:
-		faire_parler("Vous avez perdu !", config.NOM_ORDI)
+		dire("Vous avez perdu !")
 	else:
-		faire_parler("Vous avez gagné !", config.NOM_ORDI)
+		dire("Vous avez gagné !")
 
 
 def lance_reussite(mode, nb_cartes=32, affiche=False, nb_tas_max=2):
@@ -103,7 +105,7 @@ def lance_reussite(mode, nb_cartes=32, affiche=False, nb_tas_max=2):
 	depuis_fichier = bool(demander_qcm("Charger la pioche depuis un fichier ?", "Non", "Oui"))
 
 	if depuis_fichier:
-		pioche = init_pioche_fichier(demander_chaine("Entrez le chemin vers le fichier à charger"))
+		pioche = init_pioche_fichier(demander_fichier("Entrez le chemin vers le fichier à charger"))
 	else:
 		pioche = init_pioche_alea(nb_cartes)
 
@@ -118,7 +120,7 @@ def lance_reussite(mode, nb_cartes=32, affiche=False, nb_tas_max=2):
 		sauve_pioche = bool(demander_qcm("Enregistrer la pioche ?", "Non", "Oui"))
 
 		if sauve_pioche:
-			ecrire_fichier_reussite(demander_chaine("Entrez le chemin vers le fichier à charger"), pioche_copie)
+			ecrire_fichier_reussite(demander_fichier("Entrez le chemin vers le fichier à charger", False), pioche_copie)
 
 
 def preparer_reussite():
@@ -126,21 +128,20 @@ def preparer_reussite():
 		démarrage du jeu.
 		Ne prend aucun argument. """
 
-	faire_parler("Bienvenu dans La réussite des alliances !", config.NOM_ORDI)
+	dire("Bienvenu dans La réussite des alliances !")
 	mode = demander_qcm("Quel mode ?", "Manuel", "Automatique")
 	jeu_type = 32 + 20 * demander_qcm("Quel jeu ?", "32 cartes", "52 cartes")
 
 	if mode:
-		faire_parler("Vous avez choisi le mode automatique", config.NOM_ORDI)
+		dire("Vous avez choisi le mode automatique")
 		affiche = bool(demander_qcm("Voulez-vous activer l'affichage ?", "Non", "Oui"))
 		tas_max = 2
 	else:
-		faire_parler("Vous avez choisi le mode manuel", config.NOM_JOUEUR)
+		dire("Vous avez choisi le mode manuel")
 		tas_max = demander_entier("Nombre de tas maximum pour gagner", 2, 32)
 		affiche = False
 
 	lance_reussite(mode, jeu_type, affiche, tas_max)
-	deboggue("Fin du jeu", config.NOM_ORDI)
 
 
 ###################################################################################################
@@ -210,7 +211,7 @@ def lancer_reussite_gfx(fenetre, images, mode, nb_cartes=32, nb_tas_max=2):
 		nb_cartes (int): Nombre de cartes du jeu (32 par défaut
 		nb_tas_max (int): Nombre de tas maximum pour gagner """
 
-	stats = {"widgets": [], "actions": [], "pioche": [], "etape": 0}
+	stats = {"widgets": [], "actions": [], "pioche": [], "etape": 0, "pioche_cp": []}
 
 	def demander_fichier_charge():
 		w, a = creer_widgets_qcm("Voulez-vous charger la pioche depuis un fichier ?", handler, "Oui", "Non")
@@ -218,7 +219,7 @@ def lancer_reussite_gfx(fenetre, images, mode, nb_cartes=32, nb_tas_max=2):
 		stats["actions"] = a
 
 	def demander_chemin_charge(texte=""):
-		titre = "Où se trouve ce fichier ? (Vous pouvez glisser déposer)"
+		titre = "Où se trouve ce fichier ?"
 		w, a = creer_widgets_input_fichier(titre, handler, demander_chemin_charge, texte)
 		stats["widgets"] = w
 		stats["actions"] = a
@@ -229,7 +230,7 @@ def lancer_reussite_gfx(fenetre, images, mode, nb_cartes=32, nb_tas_max=2):
 		stats["actions"] = a
 
 	def demander_chemin_sauve(texte=""):
-		titre = "Ou sauvegarder la pioche ? (Vous pouvez glisser déposer)"
+		titre = "Ou sauvegarder la pioche ?"
 		w, a = creer_widgets_input_fichier(titre, handler, demander_chemin_sauve, texte, False)
 		stats["widgets"] = w
 		stats["actions"] = a
@@ -248,6 +249,7 @@ def lancer_reussite_gfx(fenetre, images, mode, nb_cartes=32, nb_tas_max=2):
 		elif stats["etape"] == 1:
 			if choix:
 				stats["pioche"] = init_pioche_alea()
+				stats["pioche_cp"] = stats["pioche"][:]
 				stats["etape"] += 1
 				lancer_partie()
 			else:
@@ -255,6 +257,7 @@ def lancer_reussite_gfx(fenetre, images, mode, nb_cartes=32, nb_tas_max=2):
 		
 		elif stats["etape"] == 2:
 			stats["pioche"] = init_pioche_fichier(choix)
+			stats["pioche_cp"] = stats["pioche"][:]
 			lancer_partie()
 
 		elif stats["etape"] == 3:
@@ -263,7 +266,7 @@ def lancer_reussite_gfx(fenetre, images, mode, nb_cartes=32, nb_tas_max=2):
 			else:
 				demander_chemin_sauve()
 		else:
-			ecrire_fichier_reussite(choix, stats["pioche"])
+			ecrire_fichier_reussite(choix, stats["pioche_cp"])
 
 		stats["etape"] += 1
 
@@ -334,7 +337,7 @@ def main():
 		deboggue("Le jeu est en mode graphique")
 
 		l, h = config.TAILLE_FENETRE
-		fenetre = creer_fenetre("PolyAlliances (Chargement des ressources...)", l, h)
+		fenetre = creer_fenetre("PolyAlliances (Chargement...)", l, h)
 
 		deboggue("Chargement des images...")
 		images = charger_images_jeu()

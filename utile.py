@@ -6,13 +6,13 @@
 # Version Python: 3.8
 #
 
-""" Apporte des fonctions utilitaires sur les fichiers """
+""" Apporte des fonctions utilitaires sur les fichiers et le déboggage du jeu """
 
 
 import os
 import sys
 
-from console import deboggue
+import config
 
 
 def obtenir_liste_fichiers(chemin_dossier, *extensions):
@@ -30,6 +30,7 @@ def obtenir_liste_fichiers(chemin_dossier, *extensions):
 		return fichiers
 	else:
 		deboggue(f"Le dossier '{chemin_dossier}' n'existe pas")
+		return []
 
 
 def fichier_existe(chemin_fichier):
@@ -55,3 +56,18 @@ def arreter():
 
 	deboggue("Fin du jeu")
 	sys.exit()
+
+
+def chemin_valide(chemin):
+	chemin = os.path.abspath(chemin)
+	return os.path.exists(chemin) or os.access(os.path.dirname(chemin), os.W_OK)
+
+
+def deboggue(msg):
+	""" Affiche un message précédé de 'DEBUG' pour aider au développement du jeu. Cette fonction
+			peut être désactivée en passant config.DEBUG à False.
+
+		msg (str): Le message à afficher """
+
+	if config.DEBUG:
+		print("DEBUG > " + msg)

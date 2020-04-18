@@ -18,7 +18,6 @@ except ImportError:
 	pass
 
 from evenement import *
-from console import deboggue
 from jeu import *
 from utile import *
 
@@ -324,26 +323,33 @@ def creer_widgets_input_fichier(titre, fonction, fct_change, texte="", existe=Tr
 		fonction(evenement.file)
 
 	def quand_valide(chemin):
-		if not existe or fichier_existe(chemin):
+		if existe:
+			if fichier_existe(chemin):
+				fonction(chemin)
+			else:
+				fct_change(None)
+		elif chemin_valide(chemin):
 			fonction(chemin)
 		else:
 			fct_change(None)
 
 	lf, hf = config.TAILLE_FENETRE
 	min_y = hf // 2 - 20
-	widget = None
+	widgets = []
+	actions = []
 
 	if texte == None:
 		texte = ""
 		image = creer_image_texte("Chemin invalide", config.COULEUR_TEXTE, 18)
-		widget = creer_widget(image, lf // 2, min_y - 70, 0.5)
+		widgets.append(creer_widget(image, lf // 2, min_y - 70, 0.5))
 
-	widgets, actions = creer_widgets_input(titre, quand_valide, fct_change, texte=texte)
+	if pygame.version.vernum.major >= 2:
+		titre += " (Vous pouvez glisser déposer)"
+		actions.append(creer_action("drop", quand_drop))
+	
+	w, a = creer_widgets_input(titre, quand_valide, fct_change, texte=texte)
 
-	if widget:
-		widgets.append(widget)
-
-	action = creer_action("drop", quand_drop)
-	actions.append(action)
+	widgets.extend(w)
+	actions.extend(a)
 
 	return widgets, actions

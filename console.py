@@ -10,6 +10,8 @@
 
 import config
 
+from utile import *
+
 
 def choisir_numero(mini, maxi):
 	""" Renvoie un entier compris entre mini et maxi demandé au joueur.
@@ -18,7 +20,7 @@ def choisir_numero(mini, maxi):
 		mini (int): Entier minimal accepté
 		maxi (int): Entier maximal """
 
-	mode = input(config.NOM_JOUEUR + " > ")
+	mode = demander()
 
 	while True:
 		try:
@@ -27,11 +29,11 @@ def choisir_numero(mini, maxi):
 			if mode >= mini and mode <= maxi:
 				return mode
 			else:
-				faire_parler(f"Vous devez entrer un entier compris entre {mini} et {maxi}.", config.NOM_ORDI)
+				dire(f"Vous devez entrer un entier compris entre {mini} et {maxi}.")
 
 		except ValueError:
-			faire_parler(f"Vous devez entrer un entier compris entre {mini} et {maxi}.", config.NOM_ORDI)
-		mode = input(config.NOM_JOUEUR + " > ")
+			dire(f"Vous devez entrer un entier compris entre {mini} et {maxi}.")
+		mode = demander()
 
 
 def demander_qcm(titre, *choix):
@@ -41,7 +43,7 @@ def demander_qcm(titre, *choix):
 		titre (str): Le titre à afficher
 		choix (*str): Les options proposées au joueur """
 
-	faire_parler(titre, config.NOM_ORDI)
+	dire(titre)
 	
 	for i, action in enumerate(choix):
 		print(f"\t{i}. {action}")
@@ -57,7 +59,7 @@ def demander_entier(titre, mini, maxi):
 		min (int): Valeur minimale acceptée
 		max (int): Valeur maximale accepté """
 
-	faire_parler(titre, config.NOM_ORDI)
+	dire(titre)
 	print(f"\tEntrez un entier compris entre {mini} et {maxi}")
 	print()
 
@@ -69,19 +71,42 @@ def demander_chaine(titre):
 
 		titre (str): Le titre à afficher """
 
-	faire_parler(titre, config.NOM_ORDI)
-	return input(config.NOM_JOUEUR + " > ")
+	dire(titre)
+	return demander()
 
 
-def faire_parler(msg, auteur):
+def demander_fichier(titre, existe=True):
+	""" Demande le chemin vers un fichier. Il est possible de forcer le joueur à entrer un chemin
+			existant.
+
+		titre (str): Le chemin"""
+
+	dire(titre)
+	chemin = demander()
+
+	if existe:
+		while not fichier_existe(chemin):
+			dire("Le chemin spécifié est invalide")
+			chemin = demander()
+	else:
+		while not chemin_valide(chemin):
+			dire("Le chemin spécifié est invalide")
+			chemin = demander()
+
+	return chemin
+
+
+def dire(msg):
 	""" Affiche un message avec son auteur.
 
-		msg (str): Le message à afficher
-		auteur (str): L'auteur du message """
+		msg (str): Le message à afficher """
 
-	print(auteur + " > " + msg)
+	print(config.NOM_ORDI + " > " + msg)
 
 
-def deboggue(msg):
-	if config.DEBUG:
-		print("DEBUG > " + msg)
+def demander():
+	try:
+		return input(config.NOM_JOUEUR + " > ")
+	except KeyboardInterrupt:
+		deboggue("Arrêt par Ctrl+C du jeu")
+		arreter()
