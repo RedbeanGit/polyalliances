@@ -17,6 +17,7 @@ try:
 except ImportError:
 	pass
 
+from evenement import *
 from console import deboggue
 from jeu import *
 from utile import *
@@ -167,13 +168,24 @@ def dessiner_widget(fenetre, widget):
 	fenetre.blit(image, (x, y))
 
 
-def creer_widgets_reussite(images, liste_tas):
-	""" Crée et renvoie une liste de widgets correspondant aux cartes de la réussite.
+def creer_widgets_reussite(images, liste_tas, fonction=None):
+	""" Crée et renvoie une liste de widgets correspondant aux cartes de la réussite, ainsi que
+			leur action associée. Laissez 'fonction' à None pour empecher l'utilisateur d'interagir
+			avec la partie.
 
 		images (dict): Le dictionnaire des images chargées
-		liste_tas (list): Liste des cartes visibles de la réussite """
+		liste_tas (list): Liste des cartes visibles de la réussite
+		fonction (function, method): La fonction à executer lors d'un clic sur une carte """
 
 	widgets = []
+	actions = []
+
+	def quand_clic(evenememt, carte_id):
+		if fonction:
+			fonction(carte_id)
+
+	def quand_survol(evenement, carte_id):
+		pass
 
 	lf, hf = config.TAILLE_FENETRE
 	lc, hc = config.TAILLE_CARTE
@@ -182,39 +194,111 @@ def creer_widgets_reussite(images, liste_tas):
 
 	carte = {"valeur": "dos", "couleur": "bleu"}
 	image = obtenir_image_carte(images, carte)
-	widgets.append(creer_widget(image, lf // 2, hf - hm, 0.5, 1))
+
+	widget = creer_widget(image, lf // 2, hf - hm, 0.5, 1)
+	widgets.append(widget)
+	
+	action = creer_action("clic", quand_clic, 0, widget=widget)
+	actions.append(action)
 
 	inter_x = (lf - lm) // (lv + 1)
 	inter_y = (hf - hm) // (hv + 1)
 
 	for i, carte in enumerate(liste_tas):
-		image = obtenir_image_carte(images, carte)
 		x = int(lm + inter_x * (i % lv + 1))
 		y = int(hm + inter_y * (i // lv + 1))
-		widgets.append(creer_widget(image, x, y, 0.5, 0.5))
 
-	return widgets
+		image = obtenir_image_carte(images, carte)
+		
+		widget = creer_widget(image, x, y, 0.5, 0.5)
+		widgets.append(widget)
+
+		if i > 0 and i < len(liste_tas) - 1:
+			action = creer_action("clic", quand_clic, i, widget=widget)
+			actions.append(action)
+			action = creer_action("survol", quand_survol, i, widget=widget)
+			actions.append(action)
+
+	return widgets, actions
 
 
-def creer_widgets_qcm(titre, *choix):
-	""" Crée et renvoie une liste de widgets proposant plusieurs choix à l'utilisateur.
+def creer_widgets_qcm(titre, fonction, *choix):
+	""" Crée et renvoie une liste de widgets ainsi que leur action associée en proposant plusieurs
+			choix à l'utilisateur.
 
 		titre (str): Le titre du QCM
+		fonction (function, method): La fonction à executer une fois une option choisie
 		choix (*str): Les options du QCM """
 
+	def quand_clic(evenememt, widget_id):
+		fonction(widget_id)
+
 	widgets = []
+	actions = []
 
 	lf, hf = config.TAILLE_FENETRE
-	lm, hm = config.MARGES
 	couleur = config.COULEUR_TEXTE
 
-	image = creer_image_texte(titre, couleur, 30)
-	widgets.append(creer_widget(image, lf // 2, hm, 0.5))
+	min_y = hf // 2 - len(choix) * 20
 
-	min_y = hf // 2 - len(choix) * 21
+	image = creer_image_texte(titre, couleur, 30)
+	widgets.append(creer_widget(image, lf // 2, min_y - 75, 0.5, 0.5))
 
 	for i, option in enumerate(choix):
-		image = creer_image_texte(option, couleur, 24)
-		widgets.append(creer_widget(image, lf // 2, min_y + i * 42, 0.5, 0.5))
+		image = creer_image_texte(option, couleur, 22)
+		widget = creer_widget(image, lf // 2, min_y + i * 40, 0.5, 0.5)
+		action = creer_action("clic", quand_clic, i, widget=widget)
 
-	return widgets
+		widgets.append(widget)
+		actions.append(action)
+
+	return widgets, actions
+
+
+def creer_widgets_input(titre, fonction, fct_change, type_accepte=str, texte=""):
+	""" Crée et renvoie une liste de widgets ainsi que leur action associée en proposant au joueur
+			de taper au clavier.
+
+		titre (str): Le message à afficher
+		fonction (function, method): La fonction à executer une fois la touche entrée pressée
+		fct_change (function, method): La fonction à executer à chaque changement du texte
+		type_accepte (type): Le type d'entrée attendue (str par défaut)
+		texte (str): Le texte déjà tapé ('' par défaut) """
+
+	def quand_appui(evenement):
+		if evenement.key == pygame.K_RETURN:
+			try:
+				entree = type_accepte(texte)
+			except ValueError:
+				fct_change(texte)
+			else:
+				fonction(entree)
+		elif evenement.key == pygame.K_BACKSPACE:
+			fct_change(texte[:-1])
+		else:
+			fct_change(texte + evenement.unicode)
+
+	widgets = []
+	actions = []
+
+	lf, hf = config.TAILLE_FENETRE
+	couleur = config.COULEUR_TEXTE
+
+	min_y = hf // 2 - 20
+
+	image = creer_image_texte(titre, couleur, 30)
+	widget = creer_widget(image, lf // 2, min_y - 75, 0.5, 0.5)
+	widgets.append(widget)
+
+	if texte:
+		image = creer_image_texte(texte, couleur, 22)
+	else:
+		image = creer_image_texte("Tapez maintenant", couleur, 22)
+
+	widget = creer_widget(image, lf // 2, min_y, 0.5, 0.5)
+	widgets.append(widget)
+
+	action = creer_action("appui", quand_appui)
+	actions.append(action)
+
+	return widgets, actions

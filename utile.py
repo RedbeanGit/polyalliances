@@ -10,6 +10,7 @@
 
 
 import os
+import sys
 
 from console import deboggue
 
@@ -47,3 +48,10 @@ def creer_chemin(dossier, *sous_dossiers):
 		sous_dossiers (*str): Les sous-dossiers ou fichier """
 
 	return os.path.join(dossier, *sous_dossiers)
+
+
+def arreter():
+	""" Arrête le jeu sans attendre. """
+
+	deboggue("Fin du jeu")
+	sys.exit()

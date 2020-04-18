@@ -11,8 +11,9 @@
 import config
 import time
 
-from gfx import *
 from console import *
+from evenement import *
+from gfx import *
 from jeu import *
 
 
@@ -32,6 +33,30 @@ def reussite_mode_auto(pioche, affichage=False):
 
 	while pioche:
 		une_etape_reussite(reussite, pioche, affichage)
+
+
+def reussite_mode_auto_gfx(fenetre, images, pioche):
+	""" Joue automatiquement la réussite en partant sur la pioche donnée.
+		
+		fenetre (pygame.surface.Surface): La fenêtre de jeu
+		images (dict): Le dictionnaire des images chargées
+		pioche (list): La liste des cartes de la pioche """
+
+	reussite = []
+	
+	piocher(reussite, pioche)
+	piocher(reussite, pioche)
+	piocher(reussite, pioche)
+
+	while pioche:
+		widgets, actions = creer_widgets_reussite(images, reussite)
+		redessiner_gfx(fenetre, widgets)
+		time.sleep(1)
+		une_etape_reussite(reussite, pioche)
+
+	widgets, actions = creer_widgets_reussite(images, reussite)
+	redessiner_gfx(fenetre, widgets)
+	time.sleep(4)
 
 
 def reussite_mode_manuel(pioche, nb_tas_max=2):
@@ -84,6 +109,36 @@ def reussite_mode_manuel(pioche, nb_tas_max=2):
 		faire_parler("Vous avez gagné !", config.NOM_ORDI)
 
 
+def reussite_mode_manuel_gfx(fenetre, images, pioche, nb_tas_max=2):
+	""" Fait jouer l'utilisateur avec la pioche donnée. La partie est gagnée si le joueur termine
+			avec un nombre de tas inférieur ou égal à nb_tas_max.
+		
+		fenetre (pygame.surface.Surface): La fenêtre de jeu
+		images (dict): Le dictionnaire des images chargées
+		pioche (list): La liste des cartes de la pioche
+		nb_tas_max (int): Nombre de tas restant maximum pour gagner (2 par défaut) """
+
+	stats = {"widgets": [], "actions": [], "reussite": []}
+
+	def handler(carte_id):
+		if carte_id:
+			saut_si_possible(stats["reussite"], carte_id)
+		else:
+			piocher(stats["reussite"], pioche)
+		
+		w, a = creer_widgets_reussite(images, stats["reussite"], handler)
+		stats["widgets"] = w
+		stats["actions"] = a
+
+	piocher(stats["reussite"], pioche)
+	piocher(stats["reussite"], pioche)
+	handler(0)
+
+	while pioche:
+		redessiner_gfx(fenetre, stats["widgets"])
+		interagir(stats["actions"])
+
+
 def lance_reussite(mode, nb_cartes=32, affiche=False, nb_tas_max=2):
 	""" Lance une partie automatique ou manuelle avec un nombre de cartes fixé. Peut afficher ou
 			non les changements. La partie est gagnée si elle se termine avec un nombre de tas
@@ -117,23 +172,69 @@ def lance_reussite(mode, nb_cartes=32, affiche=False, nb_tas_max=2):
 
 
 def lancer_reussite_gfx(fenetre, images, mode, nb_cartes=32, nb_tas_max=2):
-	widgets = []
+	""" Crée la pioche, lance une partie puis sauvegarde la pioche.
 
-	def demander_pioche_from_fichier():
-		widgets.clear()
-		widgets.extend(creer_widgets_qcm("Voulez-vous charger la pioche depuis un fichier ?", "Oui", "Non"))
+		fenetre (pygame.surface.Surface): La fenêtre de jeu
+		images (dict): Le dictionnaire des images chargées
+		mode (int): Le mode de jeu (0=manuel, 1=auto)
+		nb_cartes (int): Nombre de cartes du jeu (32 par défaut
+		nb_tas_max (int): Nombre de tas maximum pour gagner """
 
-	def demander_pioche_to_fichier():
-		widgets.clear()
-		widgets.extend(creer_widgets_qcm("Voulez-vous sauvegarder la pioche ?", "Oui", "Non"))
+	stats = {"widgets": [], "actions": [], "pioche": [], "etape": 0}
 
-	def handler(widget, evenement):
-		pass
+	def demander_fichier_charge():
+		w, a = creer_widgets_qcm("Voulez-vous charger la pioche depuis un fichier ?", handler, "Oui", "Non")
+		stats["widgets"] = w
+		stats["actions"] = a
 
-	demander_pioche_from_fichier(None, None)
+	def demander_chemin(texte=""):
+		w, a = creer_widgets_input("Quel est le nom de ce fichier ?", handler, demander_chemin, str, texte)
+		stats["widgets"] = w
+		stats["actions"] = a
 
-	while True:
-		redessiner_gfx(fenetre, widgets)
+	def demander_fichier_sauve():
+		w, a = creer_widgets_qcm("Voulez-vous sauvegarder la pioche dans un fichier ?", handler, "Oui", "Non")
+		stats["widgets"] = w
+		stats["actions"] = a
+
+	def lancer_partie():
+		if mode:
+			reussite_mode_auto_gfx(fenetre, images, stats["pioche"])
+		else:
+			reussite_mode_manuel_gfx(fenetre, images, stats["pioche"], nb_tas_max)
+		demander_fichier_sauve()
+
+	def handler(choix):
+		if stats["etape"] == 0:
+			demander_fichier_charge()
+		
+		elif stats["etape"] == 1:
+			if choix:
+				stats["pioche"] = init_pioche_alea()
+				stats["etape"] += 1
+				lancer_partie()
+			else:
+				demander_chemin()
+		
+		elif stats["etape"] == 2:
+			stats["pioche"] = init_pioche_fichier(choix)
+			lancer_partie()
+
+		elif stats["etape"] == 3:
+			if choix:
+				stats["etape"] += 1
+			else:
+				demander_chemin()
+		else:
+			ecrire_fichier_reussite(choix, stats["pioche"])
+
+		stats["etape"] += 1
+
+	handler(0)
+
+	while stats["etape"] < 5:
+		redessiner_gfx(fenetre, stats["widgets"])
+		interagir(stats["actions"])
 
 
 def preparer_reussite():
@@ -164,35 +265,46 @@ def preparer_reussite_gfx(fenetre, images):
 		fenetre (pygame.surface.Surface): La fenêtre de jeu
 		images (dict): Le dictionnaire des images du jeu """
 
-	widgets = []
-	infos = {"mode": 0, "jeu": 32, "affiche": False, "etape": 0}
+	stats = {"widgets": [], "actions": [], "mode": 0, "jeu": 32, "etape": 0}
 
 	def demander_mode():
-		widgets.clear()
-		widgets.extend(creer_widgets_qcm("Choisissez un mode", "Manuel", "Automatique"))
+		w, a = creer_widgets_qcm("Choisissez un mode", handler, "Manuel", "Automatique")
+		stats["widgets"] = w
+		stats["actions"] = a
 
 	def demander_jeu():
-		widgets.clear()
-		widgets.extend(creer_widgets_qcm("Choisissez un jeu", "32 cartes", "52 cartes"))
+		w, a = creer_widgets_qcm("Choisissez un jeu", handler, "32 cartes", "52 cartes")
+		stats["widgets"] = w
+		stats["actions"] = a
 
-	def demander_tas_max():
-		widgets.clear()
+	def demander_tas_max(texte=""):
+		w, a = creer_widgets_input("Nombre de tas maximum ? (chiffres seulement)", handler, demander_tas_max, int, texte)
+		stats["widgets"] = w
+		stats["actions"] = a
 
-	def handler():
-		if infos["etape"] == 0:
+	def handler(choix):
+		if stats["etape"] == 0:
 			demander_mode()
-		elif infos["etape"] == 1:
+
+		elif stats["etape"] == 1:
+			stats["mode"] = choix
 			demander_jeu()
-		elif infos["etape"] == 2:
+		
+		elif stats["etape"] == 2:
+			stats["jeu"] = 32 + 20 * choix
 			demander_tas_max()
+		
 		else:
-			lancer_reussite_gfx(fenetre, images, infos["mode"], infos["jeu"], infos["nb_tas_max"])
-		infos["etape"] += 1
+			stats["nb_tas_max"] = choix
+			lancer_reussite_gfx(fenetre, images, stats["mode"], stats["jeu"], stats["nb_tas_max"])
 
-	handler()
+		stats["etape"] += 1
 
-	while True:
-		redessiner_gfx(fenetre, widgets)
+	handler(0)
+
+	while stats["etape"] < 4:
+		redessiner_gfx(fenetre, stats["widgets"])
+		interagir(stats["actions"])
 
 
 def main():
