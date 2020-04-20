@@ -11,6 +11,7 @@
 import config
 import time
 
+from activite import *
 from console import *
 from evenement import *
 from gfx import *
@@ -80,10 +81,12 @@ def reussite_mode_manuel(pioche, nb_tas_max=2):
 
 		elif mode == 3:
 			dire("Vous avez quitté la partie !")
+			dire("Voici les cartes qu'il restait dans la pioche")
+			afficher_reussite(pioche)
 			return None
 
 	dire("Le jeu est terminé !")
-	dire(f"Il vous reste {len(reussite)} tas")
+	dire("Il vous reste {} tas".format(len(reussite)))
 
 	if len(reussite) > nb_tas_max:
 		dire("Vous avez perdu !")
@@ -162,13 +165,13 @@ def reussite_mode_auto_gfx(fenetre, images, pioche):
 	piocher(reussite, pioche)
 
 	while pioche:
-		widgets, actions = creer_widgets_reussite(images, reussite)
-		redessiner_gfx(fenetre, widgets)
+		activite = creer_menu_reussite(images, reussite)
+		redessiner_gfx(fenetre, activite)
 		time.sleep(1)
 		une_etape_reussite(reussite, pioche)
 
-	widgets, actions = creer_widgets_reussite(images, reussite)
-	redessiner_gfx(fenetre, widgets)
+	activite = creer_widgets_reussite(images, reussite)
+	redessiner_gfx(fenetre, activite)
 	time.sleep(4)
 
 
@@ -181,25 +184,30 @@ def reussite_mode_manuel_gfx(fenetre, images, pioche, nb_tas_max=2):
 		pioche (list): La liste des cartes de la pioche
 		nb_tas_max (int): Nombre de tas restant maximum pour gagner (2 par défaut) """
 
-	stats = {"widgets": [], "actions": [], "reussite": []}
+	def quand_clic(num_tas):
+		vider_activite(activite)
 
-	def handler(carte_id):
-		if carte_id:
-			saut_si_possible(stats["reussite"], carte_id)
+		if num_tas >= 0:
+			if saut_si_possible(reussite, num_tas):
+				ajouter_activite(activite, creer_activite_textinfo("Un saut a été effectué"))
+			else:
+				ajouter_activite(activite, creer_activite_textinfo("Impossible de faire sauter cette carte"))
 		else:
-			piocher(stats["reussite"], pioche)
+			piocher(reussite, pioche)
 		
-		w, a = creer_widgets_reussite(images, stats["reussite"], handler)
-		stats["widgets"] = w
-		stats["actions"] = a
+		a = creer_menu_reussite(images, reussite, quand_clic)
+		ajouter_activite(activite, a)
 
-	piocher(stats["reussite"], pioche)
-	piocher(stats["reussite"], pioche)
-	handler(0)
+	reussite = []
+	activite = creer_menu_reussite(images, reussite, quand_clic)
+
+	piocher(reussite, pioche)
+	piocher(reussite, pioche)
+	quand_clic(-1)
 
 	while pioche:
-		redessiner_gfx(fenetre, stats["widgets"])
-		interagir(stats["actions"])
+		redessiner_gfx(fenetre, activite)
+		interagir(activite)
 
 
 def lancer_reussite_gfx(fenetre, images, mode, nb_cartes=32, nb_tas_max=2):
@@ -211,29 +219,37 @@ def lancer_reussite_gfx(fenetre, images, mode, nb_cartes=32, nb_tas_max=2):
 		nb_cartes (int): Nombre de cartes du jeu (32 par défaut
 		nb_tas_max (int): Nombre de tas maximum pour gagner """
 
-	stats = {"widgets": [], "actions": [], "pioche": [], "etape": 0, "pioche_cp": []}
-
 	def demander_fichier_charge():
-		w, a = creer_widgets_qcm("Voulez-vous charger la pioche depuis un fichier ?", handler, "Oui", "Non")
-		stats["widgets"] = w
-		stats["actions"] = a
+		vider_activite(activite)
+		a = creer_menu_qcm("Voulez-vous charger la pioche depuis un fichier ?", suivant, "Oui", "Non")
+		ajouter_activite(activite, a)
 
 	def demander_chemin_charge(texte=""):
-		titre = "Où se trouve ce fichier ?"
-		w, a = creer_widgets_input_fichier(titre, handler, demander_chemin_charge, texte)
-		stats["widgets"] = w
-		stats["actions"] = a
+		if texte == None:
+			texte = ""
+			erreur = "Chemin invalide"
+		else:
+			erreur = ""
+
+		vider_activite(activite)
+		a = creer_menu_fichier("Où se trouve le fichier à charger ?", suivant, demander_chemin_charge, texte, erreur)
+		ajouter_activite(activite, a)
 
 	def demander_fichier_sauve():
-		w, a = creer_widgets_qcm("Voulez-vous sauvegarder la pioche dans un fichier ?", handler, "Oui", "Non")
-		stats["widgets"] = w
-		stats["actions"] = a
+		vider_activite(activite)
+		a = creer_menu_qcm("Voulez-vous sauvegarder la pioche dans un fichier ?", suivant, "Oui", "Non")
+		ajouter_activite(activite, a)
 
 	def demander_chemin_sauve(texte=""):
-		titre = "Ou sauvegarder la pioche ?"
-		w, a = creer_widgets_input_fichier(titre, handler, demander_chemin_sauve, texte, False)
-		stats["widgets"] = w
-		stats["actions"] = a
+		if texte == None:
+			texte = ""
+			erreur = "Chemin invalide"
+		else:
+			erreur = ""
+
+		vider_activite(activite)
+		a = creer_menu_fichier("Où sauvegarder la pioche ?", suivant, demander_chemin_sauve, texte, erreur)
+		ajouter_activite(activite, a)
 
 	def lancer_partie():
 		if mode:
@@ -242,12 +258,12 @@ def lancer_reussite_gfx(fenetre, images, mode, nb_cartes=32, nb_tas_max=2):
 			reussite_mode_manuel_gfx(fenetre, images, stats["pioche"], nb_tas_max)
 		demander_fichier_sauve()
 
-	def handler(choix):
+	def suivant(retour):
 		if stats["etape"] == 0:
 			demander_fichier_charge()
 		
 		elif stats["etape"] == 1:
-			if choix:
+			if retour:
 				stats["pioche"] = init_pioche_alea()
 				stats["pioche_cp"] = stats["pioche"][:]
 				stats["etape"] += 1
@@ -256,25 +272,28 @@ def lancer_reussite_gfx(fenetre, images, mode, nb_cartes=32, nb_tas_max=2):
 				demander_chemin_charge()
 		
 		elif stats["etape"] == 2:
-			stats["pioche"] = init_pioche_fichier(choix)
+			stats["pioche"] = init_pioche_fichier(retour)
 			stats["pioche_cp"] = stats["pioche"][:]
 			lancer_partie()
 
 		elif stats["etape"] == 3:
-			if choix:
+			if retour:
 				stats["etape"] += 1
 			else:
 				demander_chemin_sauve()
 		else:
-			ecrire_fichier_reussite(choix, stats["pioche_cp"])
+			ecrire_fichier_reussite(retour, stats["pioche_cp"])
 
 		stats["etape"] += 1
 
-	handler(0)
+	stats = {"pioche": [], "etape": 0, "pioche_cp": []}
+	activite = creer_activite([], [], [])
+
+	suivant(0)
 
 	while stats["etape"] < 5:
-		redessiner_gfx(fenetre, stats["widgets"])
-		interagir(stats["actions"])
+		redessiner_gfx(fenetre, activite)
+		interagir(activite)
 
 
 def preparer_reussite_gfx(fenetre, images):
@@ -283,46 +302,49 @@ def preparer_reussite_gfx(fenetre, images):
 		fenetre (pygame.surface.Surface): La fenêtre de jeu
 		images (dict): Le dictionnaire des images du jeu """
 
-	stats = {"widgets": [], "actions": [], "mode": 0, "jeu": 32, "etape": 0}
-
 	def demander_mode():
-		w, a = creer_widgets_qcm("Choisissez un mode", handler, "Manuel", "Automatique")
-		stats["widgets"] = w
-		stats["actions"] = a
+		vider_activite(activite)
+		ajouter_activite(activite, creer_menu_qcm("Choisissez un mode", suivant, "Manuel", "Automatique"))
 
 	def demander_jeu():
-		w, a = creer_widgets_qcm("Choisissez un jeu", handler, "32 cartes", "52 cartes")
-		stats["widgets"] = w
-		stats["actions"] = a
+		vider_activite(activite)
+		ajouter_activite(activite, creer_menu_qcm("Choisissez un jeu", suivant, "32 cartes", "52 cartes"))
 
 	def demander_tas_max(texte=""):
-		w, a = creer_widgets_input("Nombre de tas maximum ? (chiffres seulement)", handler, demander_tas_max, int, texte)
-		stats["widgets"] = w
-		stats["actions"] = a
+		if texte == None:
+			texte = ""
+			erreur = "Vous devez entrer un entier compris entre 2 et {}".format(stats["jeu"])
+		else:
+			erreur = ""
+		vider_activite(activite)
+		a = creer_menu_entier("Nombre de tas maximum ?", suivant, demander_tas_max, 2, stats["jeu"], texte, erreur)
+		ajouter_activite(activite, a)
 
-	def handler(choix):
+	def suivant(retour):
 		if stats["etape"] == 0:
 			demander_mode()
-
+		
 		elif stats["etape"] == 1:
-			stats["mode"] = choix
+			stats["mode"] = retour
 			demander_jeu()
-		
+
 		elif stats["etape"] == 2:
-			stats["jeu"] = 32 + 20 * choix
+			stats["jeu"] = 32+20*retour
 			demander_tas_max()
-		
+
 		else:
-			stats["nb_tas_max"] = choix
-			lancer_reussite_gfx(fenetre, images, stats["mode"], stats["jeu"], stats["nb_tas_max"])
+			lancer_reussite_gfx(fenetre, images, stats["mode"], stats["jeu"], retour)
 
 		stats["etape"] += 1
 
-	handler(0)
+	stats = {"mode": 0, "jeu": 32, "etape": 0}
+	activite = creer_activite([], [], [])
+
+	suivant(0)
 
 	while stats["etape"] < 4:
-		redessiner_gfx(fenetre, stats["widgets"])
-		interagir(stats["actions"])
+		redessiner_gfx(fenetre, activite)
+		interagir(activite)
 
 
 ###################################################################################################

@@ -29,10 +29,10 @@ def choisir_numero(mini, maxi):
 			if mode >= mini and mode <= maxi:
 				return mode
 			else:
-				dire(f"Vous devez entrer un entier compris entre {mini} et {maxi}.")
+				dire("Vous devez entrer un entier compris entre {} et {}.".format(mini, maxi))
 
 		except ValueError:
-			dire(f"Vous devez entrer un entier compris entre {mini} et {maxi}.")
+			dire("Vous devez entrer un entier compris entre {} et {}.".format(mini, maxi))
 		mode = demander()
 
 
@@ -46,7 +46,7 @@ def demander_qcm(titre, *choix):
 	dire(titre)
 	
 	for i, action in enumerate(choix):
-		print(f"\t{i}. {action}")
+		print("\t{}. {}".format(i, action))
 	print()
 
 	return choisir_numero(0, len(choix)-1)
@@ -60,7 +60,7 @@ def demander_entier(titre, mini, maxi):
 		max (int): Valeur maximale accepté """
 
 	dire(titre)
-	print(f"\tEntrez un entier compris entre {mini} et {maxi}")
+	print("\tEntrez un entier compris entre {} et {}".format(mini, maxi))
 	print()
 
 	return choisir_numero(mini, maxi)

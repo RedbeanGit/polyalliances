@@ -6,7 +6,8 @@
 # Version Python: 3.8
 #
 
-""" Contient l'ensemble des fonctions de base du jeu """
+""" Contient l'ensemble des fonctions de base du jeu. Une carte est un dictionnaire stockant une
+	valeur et une couleur. """
 
 import random
 import config
@@ -61,7 +62,7 @@ def ecrire_fichier_reussite(nom_fichier, pioche):
 
 	with open(nom_fichier, "w") as fichier:
 		for carte in pioche:
-			fichier.write(f"{carte['valeur']}-{carte['couleur']} ")
+			fichier.write(str(carte['valeur'])+"-"+carte['couleur']+" ")
 
 
 def genere_jeu(nb_cartes=32):
@@ -105,10 +106,11 @@ def saut_si_possible(liste_tas, num_tas):
 		liste_tas (list): Liste des cartes visibles de la réussite
 		num_tas (int): Numéro du tas à faire sauter (de gauche à droite en partant de 0) """
 	
-	if alliance(liste_tas[num_tas-1], liste_tas[num_tas+1]):
-		liste_tas.pop(num_tas-1)
+	if num_tas > 0 and num_tas < len(liste_tas) - 1:
+		if alliance(liste_tas[num_tas-1], liste_tas[num_tas+1]):
+			liste_tas.pop(num_tas-1)
 		
-		return True
+			return True
 	return False
 
 

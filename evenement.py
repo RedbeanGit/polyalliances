@@ -16,11 +16,11 @@ except ImportError:
 from utile import *
 
 
-def interagir(actions):
+def interagir(activite):
 	""" Parcourt la liste des évenements ajoutés depuis le dernier appel de cette fonction et
 			execute les actions associées. Ne fonctionne que si Pygame a été initialisé.
 
-		actions (list): La liste des actions à executer """
+		activite (dict): L'activité avec laquelle interagir """
 
 	type_mouvement = {
 		"survol": pygame.MOUSEMOTION,
@@ -33,7 +33,7 @@ def interagir(actions):
 		if evenement.type == pygame.QUIT:
 			arreter()
 
-		for action in actions:
+		for action in activite["actions"]:
 			if evenement.type == type_mouvement[action["mouvement"]]:
 				if action["widget"]:
 					if action["mouvement"] in ("survol", "clic"):

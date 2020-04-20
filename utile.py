@@ -29,7 +29,7 @@ def obtenir_liste_fichiers(chemin_dossier, *extensions):
 			return [fichier for fichier in fichiers if os.path.splitext(fichier)[-1][1:] in extensions]
 		return fichiers
 	else:
-		deboggue(f"Le dossier '{chemin_dossier}' n'existe pas")
+		deboggue("Le dossier '{}' n'existe pas".format(chemin_dossier))
 		return []
 
 
@@ -70,4 +70,4 @@ def deboggue(msg):
 		msg (str): Le message à afficher """
 
 	if config.DEBUG:
-		print("DEBUG > " + msg)
+		print("DEBUG > {}".format(msg))
