@@ -9,21 +9,15 @@
 """ Contient toutes les constantes du jeu """
 
 DEBUG=True
-FORCE_CONSOLE=False
-
-VALEURS=("A", "R", "D", "V", 10, 9, 8, 7, 6, 5, 4, 3, 2)
+FORCE_CONSOLE=True
+VALEURS=("A", "R", "D", "V", "10", "9", "8", "7", "6", "5", "4", "3", "2")
 COULEURS={"P": "♠", "K": "♦", "C": "♥", "T": "♣"}
 COULEUR_DOS=("bleu", "gris", "jaune", "rouge", "vert", "violet")
-
-COULEUR_TEXTE=(255, 255, 255, 125)
-COULEUR_FOND=(0, 75, 20)
-COULEUR_BARRE=(70, 70, 70)
-COULEUR_BORDURE=(10, 10, 10)
-
+COULEUR_FOND="#004B14"
 TAILLE_FENETRE=(1024, 576)
-TAILLE_CARTE=(100, 153)
-MARGES=(20, 70, 20, 20)
-MAX_CARTE_VISIBLE=(8, 8)
-
+TAILLE_CARTE=(88, 128)
+POS_DEPART=(45, 20)
+MAX_CARTE_LIGNE=10
+MARGE=5
 NOM_ORDI="JEU"
 NOM_JOUEUR="VOUS"

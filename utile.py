@@ -51,6 +51,14 @@ def creer_chemin(dossier, *sous_dossiers):
 	return os.path.join(dossier, *sous_dossiers)
 
 
+def obtenir_nom_reel(nom_fichier):
+	""" Renvoie le nom du fichier sans extension.
+
+		nom_fichier (str): Le nom du fichier """
+		
+	return os.path.splitext(nom_fichier)[0]
+
+
 def arreter():
 	""" Arrête le jeu sans attendre. """
 
@@ -61,6 +69,24 @@ def arreter():
 def chemin_valide(chemin):
 	chemin = os.path.abspath(chemin)
 	return os.path.exists(chemin) or os.access(os.path.dirname(chemin), os.W_OK)
+
+
+def nombre_valide(nombre, mini, maxi):
+	""" Renvoie un entier compris entre mini et maxi demandé au joueur.
+		(fonction auxilière)
+
+		nombre (object): Un objet représentant un entier
+		mini (int): Entier minimal accepté
+		maxi (int): Entier maximal """
+
+	try:
+		nombre = int(nombre)
+	except ValueError:
+		return False
+
+	if nombre >= mini and nombre <= maxi:
+		return True
+	return False
 
 
 def deboggue(msg):

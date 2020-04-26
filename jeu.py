@@ -12,6 +12,8 @@
 import random
 import config
 
+from utile import *
+
 
 def carte_to_chaine(carte):
 	""" Renvoie une chaine de caractère représentant une carte donnée.
@@ -29,19 +31,10 @@ def carte_from_chaine(chaine):
 
 	valeur, couleur = chaine.split("-")
 
-	if valeur not in ("V", "D", "R", "A"):
+	if valeur not in ("V", "D", "R", "A", "dos"):
 		valeur = int(valeur)
 
 	return {"valeur": valeur, "couleur": couleur}
-
-
-def afficher_reussite(reussite):
-	""" Affiche les cartes de la réussite les unes à côté des autres.
-		
-		reussite (list): Liste contenant les cartes à afficher """
-
-	print(*map(carte_to_chaine, reussite))
-	print()
 
 
 def init_pioche_fichier(chemin_fichier):
@@ -74,6 +67,9 @@ def genere_jeu(nb_cartes=32):
 	cartes = []
 
 	for valeur in config.VALEURS:
+		if valeur in "2345678910":
+			valeur = int(valeur)
+
 		for couleur in config.COULEURS:
 			cartes.append({"valeur": valeur, "couleur": couleur})
 
@@ -146,3 +142,33 @@ def une_etape_reussite(liste_tas, pioche, affiche=False):
 	
 			num_tas = 0
 		num_tas += 1
+
+
+def obtenir_liste_pioche():
+	""" Recherche tous les fichiers susceptible de d'être une pioche dans le répertoire 
+			ressources/pioches. """
+
+	dossier_pioches = creer_chemin("ressources", "pioches")
+	nom_fichiers = obtenir_liste_fichiers(dossier_pioches, "txt")
+	fichiers_valides = []
+
+	for nom_fichier in nom_fichiers:
+		chemin_fichier = creer_chemin(dossier_pioches, nom_fichier)
+
+		with open(chemin_fichier, "r") as file:
+			contenu = file.read()
+
+		for carte in contenu.split():
+			if carte:
+				attr = carte.split("-")
+
+				if len(attr) != 2:
+					break
+				elif attr[0] not in config.VALEURS:
+					break
+				elif attr[1] not in config.COULEURS:
+					break
+		else:
+			fichiers_valides.append(nom_fichier)
+
+	return fichiers_valides

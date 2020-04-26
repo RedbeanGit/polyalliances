@@ -10,30 +10,17 @@
 
 import config
 
+from jeu import *
 from utile import *
 
 
-def choisir_numero(mini, maxi):
-	""" Renvoie un entier compris entre mini et maxi demandé au joueur.
-		(fonction auxilière)
+def afficher_reussite(reussite):
+	""" Affiche les cartes de la réussite les unes à côté des autres.
+		
+		reussite (list): Liste contenant les cartes à afficher """
 
-		mini (int): Entier minimal accepté
-		maxi (int): Entier maximal """
-
-	mode = demander()
-
-	while True:
-		try:
-			mode = int(mode)
-
-			if mode >= mini and mode <= maxi:
-				return mode
-			else:
-				dire("Vous devez entrer un entier compris entre {} et {}.".format(mini, maxi))
-
-		except ValueError:
-			dire("Vous devez entrer un entier compris entre {} et {}.".format(mini, maxi))
-		mode = demander()
+	print(*map(carte_to_chaine, reussite))
+	print()
 
 
 def demander_qcm(titre, *choix):
@@ -49,7 +36,13 @@ def demander_qcm(titre, *choix):
 		print("\t{}. {}".format(i, action))
 	print()
 
-	return choisir_numero(0, len(choix)-1)
+	entree = demander()
+
+	while not nombre_valide(entree, 0, len(choix)-1):
+		dire("Vous devez entrer un entier compris entre {} et {}.".format(mini, maxi))
+		entree = demander()
+
+	return int(entree)
 
 
 def demander_entier(titre, mini, maxi):
@@ -63,7 +56,13 @@ def demander_entier(titre, mini, maxi):
 	print("\tEntrez un entier compris entre {} et {}".format(mini, maxi))
 	print()
 
-	return choisir_numero(mini, maxi)
+	entree = demander()
+
+	while not nombre_valide(entree, mini, maxi):
+		dire("Vous devez entrer un entier compris entre {} et {}.".format(mini, maxi))
+		entree = demander()
+
+	return int(entree)
 
 
 def demander_chaine(titre):
