@@ -258,6 +258,15 @@ def preparer_reussite_gui(fenetre, images):
 				return int(texte) >= 2
 		return False
 
+	def quand_mode_change(*args):
+		if var_mod.get():
+			desactiver_categorie(saisi_tas)
+			activer_categorie(qcm_aff)
+		else:
+			desactiver_categorie(qcm_aff)
+			activer_categorie(saisi_tas)
+			var_aff.set(1)
+
 	cadre = creer_categorie(fenetre, "Réglages", "n")
 	qcm_mod, var_mod = creer_qcm_simple(cadre, "Mode de jeu", "Manuel", "Automatique")
 	qcm_jeu, var_jeu = creer_qcm_simple(cadre, "Nombre de cartes", "32 cartes", "52 cartes")
@@ -266,7 +275,11 @@ def preparer_reussite_gui(fenetre, images):
 	bouton_valide = creer_bouton(cadre, "Continuer", quand_valide)
 
 	info_boucle = {"attente": True}
+
+	var_mod.trace("w", quand_mode_change)
 	var_tas.set("2")
+
+	quand_mode_change()
 
 	while info_boucle["attente"]:
 		redessiner_fenetre(fenetre)

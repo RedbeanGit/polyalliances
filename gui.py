@@ -219,6 +219,24 @@ def creer_qcm_liste(parent, titre, *options):
 	return cadre, qcm_var
 
 
+def desactiver_categorie(cadre):
+	""" Désactive tous les widgets enfants du cadre donné.
+
+		cadre (tkinter.Widget): Le cadre parent """
+
+	for widget in cadre.winfo_children():
+		widget.config(state=tkinter.DISABLED)
+
+
+def activer_categorie(cadre):
+	""" Active tous les widgets enfants du cadre donné.
+
+		cadre (tkinter.Widget): Le cadre parent """
+
+	for widget in cadre.winfo_children():
+		widget.config(state=tkinter.NORMAL)
+
+
 def demander_charger_pioche(fenetre):
 	""" Affiche un menu qui demande au joueur de choisir une pioche.
 
@@ -226,6 +244,12 @@ def demander_charger_pioche(fenetre):
 
 	def quand_valide():
 		info_boucle["attente"] = False
+
+	def quand_qcm_change(*args):
+		if var_fic.get():
+			activer_categorie(liste_pio)
+		else:
+			desactiver_categorie(liste_pio)
 
 	pioches = obtenir_liste_pioche()
 
@@ -235,6 +259,9 @@ def demander_charger_pioche(fenetre):
 	bouton_valide = creer_bouton(cadre, "Continuer", quand_valide)
 
 	info_boucle = {"attente": True}
+
+	var_fic.trace("w", quand_qcm_change)
+	quand_qcm_change()
 
 	while info_boucle["attente"]:
 		redessiner_fenetre(fenetre)
@@ -254,12 +281,21 @@ def demander_sauver_pioche(fenetre):
 	def quand_valide():
 		info_boucle["attente"] = False
 
+	def quand_qcm_change(*args):
+		if var_fic.get():
+			activer_categorie(saisi_pio)
+		else:
+			desactiver_categorie(saisi_pio)
+
 	cadre = creer_categorie(fenetre, "Sauvegarde", "n")
 	qcm_fic, var_fic = creer_qcm_simple(cadre, "Sauvegarder ?", "Non", "Oui")
 	saisi_pio, var_pio = creer_champs_saisi(cadre, "Nom de la pioche")
 	bouton_valide = creer_bouton(cadre, "Continuer", quand_valide)
 
 	info_boucle = {"attente": True}
+
+	var_fic.trace("w", quand_qcm_change)
+	quand_qcm_change()
 
 	while info_boucle["attente"]:
 		redessiner_fenetre(fenetre)
