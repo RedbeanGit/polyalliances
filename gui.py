@@ -200,15 +200,19 @@ def creer_bouton(parent, texte, fct_clic):
 	return bouton
 
 
+def creer_checkbouton(parent, texte):
+	var = tkinter.IntVar()
+	bouton = tkinter.Checkbutton(parent, text=texte, variable=var)
+	bouton.pack(anchor=tkinter.W)
+
+	return bouton, var
+
+
 def creer_qcm_liste(parent, titre, *options):
 	""" Crée une liste d'éléments textuels. Renvoie le widget englobant la liste et une StringVar
 			associée. """
 
 	cadre = creer_categorie(parent, titre)
-	qcm_var = tkinter.StringVar()
-
-	if options:
-		qcm_var.set(options[0])
 
 	liste = tkinter.Listbox(cadre, selectmode="single")
 	liste.pack(fill=tkinter.BOTH)
@@ -216,7 +220,23 @@ def creer_qcm_liste(parent, titre, *options):
 	for option in options:
 		liste.insert(tkinter.END, option)
 
-	return cadre, qcm_var
+	return cadre, liste
+
+
+def creer_menu(fenetre, parent):
+	""" Ajoute un bouton 'Continuer' et attend que l'utilisateur clic dessus pour continuer.
+
+		fenetre (tkinter.Tk): La fenêtre de jeu
+		parent (tkinter.Widget): Le widget parent du menu """
+
+	def quand_valide():
+		boucle_info["attente"] = False
+
+	boucle_info = {"attente": True}
+	bouton_valide = creer_bouton(parent, "Continuer", quand_valide)
+
+	while boucle_info["attente"]:
+		redessiner_fenetre(fenetre)
 
 
 def desactiver_categorie(cadre):
@@ -237,13 +257,68 @@ def activer_categorie(cadre):
 		widget.config(state=tkinter.NORMAL)
 
 
-def demander_charger_pioche(fenetre):
-	""" Affiche un menu qui demande au joueur de choisir une pioche.
+def afficher_popup(fenetre, *messages):
+	""" Affiche une fenêtre popup pour avertir le joueur.
+
+		fenetre (tkinter.Tk): La fenêtre de jeu
+		messages (*str): Les messages à afficher """
+
+	popup = tkinter.Toplevel()
+	popup.title("Informations")
+	popup.minsize(250, 50)
+	popup.resizable(False, False)
+	popup.grab_set()
+
+	for message in messages:
+		label = tkinter.Label(popup, text=message)
+		label.pack()
+
+	bouton = tkinter.Button(popup, text="D'accord", command=popup.destroy)
+	bouton.pack()
+
+	fenetre.wait_window(popup)
+
+
+def demander_reglages(fenetre):
+	""" Créer un menu proposant au joueur de changer les réglages initiaux du jeu.
 
 		fenetre (tkinter.Tk): La fenêtre de jeu """
 
-	def quand_valide():
-		info_boucle["attente"] = False
+	def quand_tape(texte):
+		if texte:
+			if texte.isdigit():
+				return int(texte) >= 2
+		return False
+
+	def quand_mode_change(*args):
+		if var_mod.get():
+			desactiver_categorie(saisi_tas)
+			activer_categorie(qcm_aff)
+		else:
+			desactiver_categorie(qcm_aff)
+			activer_categorie(saisi_tas)
+			var_aff.set(1)
+
+	cadre = creer_categorie(fenetre, "Réglages", "n")
+	qcm_mod, var_mod = creer_qcm_simple(cadre, "Mode de jeu", "Manuel", "Automatique")
+	qcm_jeu, var_jeu = creer_qcm_simple(cadre, "Nombre de cartes", "32 cartes", "52 cartes")
+	qcm_aff, var_aff = creer_qcm_simple(cadre, "Activer l'affichage", "Non", "Oui")
+	saisi_tas, var_tas = creer_champs_saisi(cadre, "Nombre de tas maxi pour gagner", quand_tape, "Entier supérieur à 2")
+
+	var_mod.trace("w", quand_mode_change)
+	var_tas.set("2")
+
+	quand_mode_change()
+	creer_menu(fenetre, cadre)
+
+	cadre.destroy()
+	return var_mod.get(), var_jeu.get(), var_aff.get(), var_tas.get()
+
+
+def demander_charger_pioche(fenetre):
+	""" Affiche un menu proposant au joueur de choisir une pioche.
+
+		fenetre (tkinter.Tk): La fenêtre de jeu """
 
 	def quand_qcm_change(*args):
 		if var_fic.get():
@@ -256,30 +331,24 @@ def demander_charger_pioche(fenetre):
 	cadre = creer_categorie(fenetre, "Pioche", "n")
 	qcm_fic, var_fic = creer_qcm_simple(cadre, "Depuis un fichier ?", "Non", "Oui")
 	liste_pio, var_pio = creer_qcm_liste(cadre, "Quelle pioche ?", *pioches)
-	bouton_valide = creer_bouton(cadre, "Continuer", quand_valide)
-
-	info_boucle = {"attente": True}
+	bouton_tri, var_tri = creer_checkbouton(liste_pio, "Autoriser les pioches truquées")
 
 	var_fic.trace("w", quand_qcm_change)
 	quand_qcm_change()
+	creer_menu(fenetre, cadre)
 
-	while info_boucle["attente"]:
-		redessiner_fenetre(fenetre)
-
+	pioche = pioches[var_pio.curselection()[0]]
 	cadre.destroy()
 
 	if var_fic.get():
-		return var_pio.get()
-	return None
+		return pioche, bool(var_tri.get())
+	return None, None
 
 
 def demander_sauver_pioche(fenetre):
-	""" Affiche un menu qui demande au joueur de choisir une pioche.
+	""" Affiche un menu proposant au joueur de sauvegarder une pioche.
 
 		fenetre (tkinter.Tk): La fenêtre de jeu """
-
-	def quand_valide():
-		info_boucle["attente"] = False
 
 	def quand_qcm_change(*args):
 		if var_fic.get():
@@ -290,15 +359,10 @@ def demander_sauver_pioche(fenetre):
 	cadre = creer_categorie(fenetre, "Sauvegarde", "n")
 	qcm_fic, var_fic = creer_qcm_simple(cadre, "Sauvegarder ?", "Non", "Oui")
 	saisi_pio, var_pio = creer_champs_saisi(cadre, "Nom de la pioche")
-	bouton_valide = creer_bouton(cadre, "Continuer", quand_valide)
-
-	info_boucle = {"attente": True}
 
 	var_fic.trace("w", quand_qcm_change)
 	quand_qcm_change()
-
-	while info_boucle["attente"]:
-		redessiner_fenetre(fenetre)
+	creer_menu(fenetre, cadre)
 
 	cadre.destroy()
 

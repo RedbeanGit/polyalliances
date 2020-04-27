@@ -33,14 +33,19 @@ def reussite_mode_auto(pioche, affichage=False):
 		affichage (bool): Si True, affiche la pioche et la réussite après chaque changement (False
 			par défaut) """
 
+	liste_tas = []
+	pioche = pioche[:]
+
 	if affichage:
 		dire("Voici la pioche")
 		afficher_reussite(pioche)
 
-	reussite = []
-
 	while pioche:
-		une_etape_reussite(reussite, pioche, affichage)
+		une_etape_reussite(liste_tas, pioche, affichage)
+
+	if affichage:
+		dire("La jeu est terminé !")
+		dire("Il reste {} tas.".format(len(liste_tas)))
 
 
 def reussite_mode_manuel(pioche, nb_tas_max=2):
@@ -50,15 +55,16 @@ def reussite_mode_manuel(pioche, nb_tas_max=2):
 		pioche (list): La liste des cartes de la pioche
 		nb_tas_max (int): Nombre de tas restant maximum pour gagner (2 par défaut) """
 	
-	reussite = []
+	liste_tas = []
+	pioche = pioche[:]
 
-	piocher(reussite, pioche)
-	piocher(reussite, pioche)
-	piocher(reussite, pioche)
+	piocher(liste_tas, pioche)
+	piocher(liste_tas, pioche)
+	piocher(liste_tas, pioche)
 
 	while pioche:
 		dire("Voici les tas visibles")
-		afficher_reussite(reussite)
+		afficher_reussite(liste_tas)
 
 		mode = demander_qcm(
 			"Choisissez une action", 
@@ -68,14 +74,14 @@ def reussite_mode_manuel(pioche, nb_tas_max=2):
 			"Quitter")
 
 		if mode == 0:
-			piocher(reussite, pioche)
+			piocher(liste_tas, pioche)
 
 		elif mode == 1:
 			saut = demander_entier(
 				"Quel tas faire sauter ? (ne s'applique ni au 1er ni au dernier tas)",
-				1, len(reussite) - 2)
+				1, len(liste_tas) - 2)
 
-			if saut_si_possible(reussite, saut):
+			if saut_si_possible(liste_tas, saut):
 				dire("Un saut a été effectué !")
 			else:
 				dire("Impossible de faire sauter ce tas !")
@@ -87,9 +93,9 @@ def reussite_mode_manuel(pioche, nb_tas_max=2):
 			return None
 
 	dire("Le jeu est terminé !")
-	dire("Il vous reste {} tas".format(len(reussite)))
+	dire("Il vous reste {} tas".format(len(liste_tas)))
 
-	if len(reussite) > nb_tas_max:
+	if len(liste_tas) > nb_tas_max:
 		dire("Vous avez perdu !")
 	else:
 		dire("Vous avez gagné !")
@@ -105,26 +111,36 @@ def lance_reussite(mode, nb_cartes=32, affiche=False, nb_tas_max=2):
 		affiche (bool): Si True, affiche la pioche et la réussite après chaque changement (False
 			par défaut)
 		nb_tas_max (int): Nombre de tas restant maximum pour gagner (2 par défaut) """
-	
-	depuis_fichier = bool(demander_qcm("Charger la pioche depuis un fichier ?", "Non", "Oui"))
 
-	if depuis_fichier:
-		pioche = init_pioche_fichier(demander_fichier("Entrez le chemin vers le fichier à charger"))
-	else:
-		pioche = init_pioche_alea(nb_cartes)
+	while True:	
+		depuis_fichier = bool(demander_qcm("Charger la pioche depuis un fichier ?", "Non", "Oui"))
 
-	pioche_copie = pioche[:]
+		if depuis_fichier:
+			pioche = init_pioche_fichier(demander_fichier("Entrez le chemin vers le fichier à charger"))
+		else:
+			pioche = init_pioche_alea(nb_cartes)
 
-	if mode:
+		if not verifier_pioche(pioche, nb_cartes):
+			dire("Triche détectée ! La pioche est invalide !")
+			pioche_acceptee = demander_qcm("Voulez-vous continuer avec cette pioche ?", "Non", "Oui")
+
+			if pioche_acceptee:
+				break
+		else:
+			break
+
+	if mode == "auto":
 		reussite_mode_auto(pioche, affiche)
-	else:
+	elif mode == "manuel":
 		reussite_mode_manuel(pioche, nb_tas_max)
+	else:
+		deboggue("Mode non reconnu !")
 
 	if not depuis_fichier:
 		sauve_pioche = bool(demander_qcm("Enregistrer la pioche ?", "Non", "Oui"))
 
 		if sauve_pioche:
-			ecrire_fichier_reussite(demander_fichier("Entrez le chemin vers le fichier à charger", False), pioche_copie)
+			ecrire_fichier_reussite(demander_fichier("Entrez le chemin vers le fichier à charger", False), pioche)
 
 
 def preparer_reussite():
@@ -140,10 +156,12 @@ def preparer_reussite():
 		dire("Vous avez choisi le mode automatique")
 		affiche = bool(demander_qcm("Voulez-vous activer l'affichage ?", "Non", "Oui"))
 		tas_max = 2
+		mode = "auto"
 	else:
 		dire("Vous avez choisi le mode manuel")
 		tas_max = demander_entier("Nombre de tas maximum pour gagner", 2, 32)
 		affiche = False
+		mode = "manuel"
 
 	lancer_reussite(mode, jeu_type, affiche, tas_max)
 
@@ -168,6 +186,7 @@ def reussite_mode_auto_gui(fenetre, images, pioche, affichage=False):
 			fenetre.after(500, tick)
 
 	liste_tas = []
+	pioche = pioche[:]
 
 	if affichage:
 		canvas = creer_zone_jeu(fenetre)
@@ -176,10 +195,15 @@ def reussite_mode_auto_gui(fenetre, images, pioche, affichage=False):
 
 		while pioche:
 			redessiner_fenetre(fenetre)
+
 		canvas.destroy()
 	else:
 		while pioche:
 			une_etape_reussite(liste_tas, pioche)
+
+	message1 = "Le jeu est terminé !"
+	message2 = "Il reste {} tas.".format(len(liste_tas))
+	afficher_popup(fenetre, message1, message2)
 
 
 def reussite_mode_manuel_gui(fenetre, images, pioche, nb_tas_max=2):
@@ -205,11 +229,22 @@ def reussite_mode_manuel_gui(fenetre, images, pioche, nb_tas_max=2):
 
 	canvas = creer_zone_jeu(fenetre)
 	liste_tas = []
+	pioche = pioche[:]
 
 	dessiner_reussite_gui(canvas, images, liste_tas, quand_clic)
 
 	while pioche:
 		redessiner_fenetre(fenetre)
+
+	message1 = "Le jeu est terminé !"
+	message2 = "Il vous reste {} tas".format(len(liste_tas))
+
+	if len(liste_tas) > nb_tas_max:
+		message3 = "Vous avez perdu !"
+	else:
+		message3 = "Vous avez gagné !"
+
+	afficher_popup(fenetre, message1, message2, message3)
 
 	canvas.destroy()
 
@@ -223,24 +258,32 @@ def lance_reussite_gui(fenetre, images, mode, nb_cartes=32, affiche=False, nb_ta
 		nb_cartes (int): Nombre de cartes du jeu (32 par défaut
 		nb_tas_max (int): Nombre de tas maximum pour gagner """
 
-	nom_fichier = demander_charger_pioche(fenetre)
+	while True:
+		nom_fichier, truquee = demander_charger_pioche(fenetre)
 
-	if nom_fichier:
-		pioche = init_pioche_fichier(creer_chemin("ressources", "pioches", nom_fichier))
-	else:
-		pioche = init_pioche_alea(nb_cartes)
+		if nom_fichier:
+			pioche = init_pioche_fichier(creer_chemin("ressources", "pioches", nom_fichier))
+		else:
+			pioche = init_pioche_alea(nb_cartes)
 
-	pioche_copie = pioche[:]
+		if truquee:
+			break
+		elif verifier_pioche(pioche, nb_cartes):
+			break
+		else:
+			afficher_popup(fenetre, "La pioche choisie est truquée !")
 
-	if mode:
+	if mode == "auto":
 		reussite_mode_auto_gui(fenetre, images, pioche, affiche)
-	else:
+	elif mode == "manuel":
 		reussite_mode_manuel_gui(fenetre, images, pioche, nb_tas_max)
+	else:
+		deboggue("Mode non reconnu !")
 
 	nom_fichier = demander_sauver_pioche(fenetre)
 
 	if nom_fichier:
-		ecrire_fichier_reussite(creer_chemin("ressources", "pioches", nom_fichier), pioche_copie)
+		ecrire_fichier_reussite(creer_chemin("ressources", "pioches", nom_fichier), pioche)
 
 
 def preparer_reussite_gui(fenetre, images):
@@ -249,43 +292,15 @@ def preparer_reussite_gui(fenetre, images):
 		fenetre (pygame.surface.Surface): La fenêtre de jeu
 		images (dict): Le dictionnaire des images du jeu """
 
-	def quand_valide():
-		info_boucle["attente"] = False
+	modes = ("manuel", "auto")
+	mode, nb_cartes, affiche, nb_tas_max = demander_reglages(fenetre)
+	
+	mode = modes[mode]
+	nb_cartes = 32 + 20 * nb_cartes
+	affiche = bool(affiche)
+	nb_tas_max = int(nb_tas_max)
 
-	def quand_tape(texte):
-		if texte:
-			if texte.isdigit():
-				return int(texte) >= 2
-		return False
-
-	def quand_mode_change(*args):
-		if var_mod.get():
-			desactiver_categorie(saisi_tas)
-			activer_categorie(qcm_aff)
-		else:
-			desactiver_categorie(qcm_aff)
-			activer_categorie(saisi_tas)
-			var_aff.set(1)
-
-	cadre = creer_categorie(fenetre, "Réglages", "n")
-	qcm_mod, var_mod = creer_qcm_simple(cadre, "Mode de jeu", "Manuel", "Automatique")
-	qcm_jeu, var_jeu = creer_qcm_simple(cadre, "Nombre de cartes", "32 cartes", "52 cartes")
-	qcm_aff, var_aff = creer_qcm_simple(cadre, "Activer l'affichage", "Non", "Oui")
-	saisi_tas, var_tas = creer_champs_saisi(cadre, "Nombre de tas maxi pour gagner", quand_tape, "Entier supérieur à 2")
-	bouton_valide = creer_bouton(cadre, "Continuer", quand_valide)
-
-	info_boucle = {"attente": True}
-
-	var_mod.trace("w", quand_mode_change)
-	var_tas.set("2")
-
-	quand_mode_change()
-
-	while info_boucle["attente"]:
-		redessiner_fenetre(fenetre)
-
-	cadre.destroy()
-	lance_reussite_gui(fenetre, images, var_mod.get(), 32+20*var_jeu.get(), bool(var_aff.get()), int(var_tas.get()))
+	lance_reussite_gui(fenetre, images, mode, nb_cartes, affiche, nb_tas_max)
 
 
 ###################################################################################################

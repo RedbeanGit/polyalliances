@@ -42,6 +42,7 @@ def init_pioche_fichier(chemin_fichier):
 		
 		chemin_fichier (str): Chemin vers le fichier contenant la liste des cartes """
 
+	deboggue("Chargement de la pioche depuis '" + chemin_fichier + "'")
 	with open(chemin_fichier, "r") as fichier:
 		cartes = [carte_from_chaine(chaine) for chaine in fichier.read().split() if chaine]
 	return cartes
@@ -53,6 +54,7 @@ def ecrire_fichier_reussite(nom_fichier, pioche):
 		nom_fichier (str): Nom du fichier dans lequel écrire la pioche
 		pioche (list): Liste des cartes de la pioche """
 
+	deboggue("Sauvegarde de la pioche dans '" + nom_fichier + "'")
 	with open(nom_fichier, "w") as fichier:
 		for carte in pioche:
 			fichier.write(str(carte['valeur'])+"-"+carte['couleur']+" ")
@@ -144,6 +146,48 @@ def une_etape_reussite(liste_tas, pioche, affiche=False):
 		num_tas += 1
 
 
+def verifier_pioche(pioche, nb_cartes=32):
+	""" Vérifie si une pioche n'est pas truquée (pas de cartes en double et nombre de cartes
+			correct).
+
+		pioche (list): La liste des cartes de la pioche
+		nb_cartes (int): Le nombre de cartes du jeu (32 par défaut) """
+
+	if len(pioche) != nb_cartes:
+		return False
+
+	pioche = pioche[:]
+	testees = []
+
+	while pioche:
+		carte = pioche.pop()
+
+		if carte in testees:
+			break
+
+		testees.append(carte)
+
+	return len(testees) == nb_cartes
+
+
+def chaine_est_pioche(chaine):
+	""" Renvoie True si chaine représente une pioche sinon False.
+
+		chaine (str): La chaine à tester """
+		
+	for carte in chaine.split():
+		if carte:
+			attr = carte.split("-")
+
+			if len(attr) != 2:
+				return False
+			elif attr[0] not in config.VALEURS:
+				return False
+			elif attr[1] not in config.COULEURS:
+				return False
+	return True
+
+
 def obtenir_liste_pioche():
 	""" Recherche tous les fichiers susceptible de d'être une pioche dans le répertoire 
 			ressources/pioches. """
@@ -158,17 +202,7 @@ def obtenir_liste_pioche():
 		with open(chemin_fichier, "r") as file:
 			contenu = file.read()
 
-		for carte in contenu.split():
-			if carte:
-				attr = carte.split("-")
-
-				if len(attr) != 2:
-					break
-				elif attr[0] not in config.VALEURS:
-					break
-				elif attr[1] not in config.COULEURS:
-					break
-		else:
+		if chaine_est_pioche(contenu):
 			fichiers_valides.append(nom_fichier)
 
 	return fichiers_valides
