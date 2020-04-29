@@ -46,7 +46,7 @@ import tkinter
 ###################################################################################################
 
 DEBUG=False
-FORCE_CONSOLE=False
+FORCE_CONSOLE=True
 VALEURS=("A", "R", "D", "V", "10", "9", "8", "7", "6", "5", "4", "3", "2")
 COULEURS={"P": "♠", "K": "♦", "C": "♥", "T": "♣"}
 COULEUR_DOS=("bleu", "gris", "jaune", "rouge", "vert", "violet")
@@ -604,7 +604,7 @@ def afficher_menu_stats(fenetre):
 
 	cadre = creer_categorie(fenetre, "Statistiques", "n")
 	qcm_jeu, var_jeu = creer_qcm_simple(cadre, "Nombre de cartes", "32 cartes", "52 cartes")
-	qcm_ame, var_ame = creer_qcm_simple(cadre, "Pioches améliorées ?", "Non", "Oui")
+	qcm_ame, var_ame = creer_qcm_simple(cadre, "Pioche améliorée", "Aucune modification", "Echange consécutif", "Echange")
 	saisi_sim, var_sim = creer_champs_saisi(cadre, "Nombre de simulation par tas max", quand_tape, "Entier positif")
 
 	var_sim.set("1") # nombre de simulations par défaut
@@ -909,12 +909,13 @@ def obtenir_liste_pioche():
 ### Statistiques ##################################################################################
 ###################################################################################################
 
-def res_multi_simulation(nb_sim, nb_cartes=32, pioche_amelioree=False):
+def res_multi_simulation(nb_sim, nb_cartes=32, niveau_triche=0):
 	""" Réalise nb_sim simulations et renvoie la liste du nombre de tas restants après chaque
 			simulation.
 
 		nb_sim (int): Le nombre de simulation à effectuer
-		nb_cartes (int): Le nombre de cartes de chaque jeu (32 par défaut) """
+		nb_cartes (int): Le nombre de cartes de chaque jeu (32 par défaut)
+		niveau_triche (int): Le niveau de triche (0 par défaut) """
 
 	resultats = []
 
@@ -923,8 +924,11 @@ def res_multi_simulation(nb_sim, nb_cartes=32, pioche_amelioree=False):
 		pioche = init_pioche_alea(nb_cartes)
 		liste_tas = []
 
-		if pioche_amelioree:
+		if niveau_triche == 1:
 			pioche, amel = meilleur_echange_consecutif(pioche)
+			deboggue("Il est possible d'améliorer la pioche pour gagner {} tas".format(amel))
+		elif niveau_triche == 2:
+			pioche, amel = meilleur_echange(pioche)
 			deboggue("Il est possible d'améliorer la pioche pour gagner {} tas".format(amel))
 		
 		while pioche:
@@ -934,14 +938,15 @@ def res_multi_simulation(nb_sim, nb_cartes=32, pioche_amelioree=False):
 	return resultats
 
 
-def statistiques_nb_tas(nb_sim, nb_cartes=32, pioche_amelioree=False):
+def statistiques_nb_tas(nb_sim, nb_cartes=32, niveau_triche=0):
 	""" Calcule et affiche la moyenne, le minimum et le maximum de tas restants après nb_sim
 			simulations. Affiche également le nombre de tas > et < à la moyenne.
 
 		nb_sim (int): Le nombre de simulation à effectuer
-		nb_cartes (int): Le nombre de cartes de chaque jeu (32 par défaut) """
+		nb_cartes (int): Le nombre de cartes de chaque jeu (32 par défaut)
+		niveau_triche (int): Le niveau de triche (0 par défaut) """
 
-	resultats = res_multi_simulation(nb_sim, nb_cartes, pioche_amelioree)
+	resultats = res_multi_simulation(nb_sim, nb_cartes, niveau_triche)
 	mini = nb_cartes
 	maxi = 2
 	total = 0
@@ -968,17 +973,18 @@ def statistiques_nb_tas(nb_sim, nb_cartes=32, pioche_amelioree=False):
 	dire("Tas inférieurs à {m}: {}\tTas supérieurs à {m}: {}".format(inf_m, sup_m, m=moyenne))
 
 
-def probabilite_victoire(nb_sim, nb_cartes=32, pioche_amelioree=False):
+def probabilite_victoire(nb_sim, nb_cartes=32, niveau_triche=0):
 	""" Détermine les chances de gagner en fonction du nombre de tas maximum autorisés.
 
 		nb_sim (int): Le nombre de simulations à chaque test
-		nb_cartes (int): Le nombre de carte du jeu (32 par défaut) """
+		nb_cartes (int): Le nombre de carte du jeu (32 par défaut)
+		niveau_triche (int): Le niveau de triche (0 par défaut) """
 
 	victoires = []
 
 	for nb_tas_max in range(nb_cartes):
 		deboggue("Calcul du taux de victoire pour {} tas max".format(nb_tas_max))
-		resultats = res_multi_simulation(nb_sim, nb_cartes, pioche_amelioree)
+		resultats = res_multi_simulation(nb_sim, nb_cartes, niveau_triche)
 		nb_victoires = sum(resultat <= nb_tas_max for resultat in resultats)
 		victoires.append(nb_victoires / len(resultats))
 
@@ -986,7 +992,11 @@ def probabilite_victoire(nb_sim, nb_cartes=32, pioche_amelioree=False):
 
 
 def meilleur_echange_consecutif(pioche):
-	""" """
+	""" Renvoie une pioche modifiée par un échange consécutif de tel sorte que cet echange soit le
+			meilleur pour gagner, ainsi que le nombre de tas gagnés grâce à cet échange.
+		(fonction extension)
+
+		pioche (list): La liste des cartes de la pioche """
 
 	nb_tas_depart = len(reussite_mode_auto(pioche))
 
@@ -1002,22 +1012,46 @@ def meilleur_echange_consecutif(pioche):
 			meilleur_tas = nb_tas
 			meilleur_pioche = pioche2
 
-	return meilleur_pioche, nb_tas_depart - nb_tas
+	return meilleur_pioche, nb_tas_depart - meilleur_tas
 
 
-def creer_graphique(nb_sim, nb_cartes=32, pioche_amelioree=False):
+def meilleur_echange(pioche):
+	""" Renvoie une pioche modifiée par un échange de tel sorte que cet échange soit le meilleur
+			pour gagner, ainsi que le nombre de tas gagnés grâce à cet échange.
+		(fonction auxilière)
+
+		pioche (list): La liste des cartes de la pioche """
+
+	nb_tas_depart = len(reussite_mode_auto(pioche))
+
+	meilleur_pioche = pioche
+	meilleur_tas = nb_tas_depart
+
+	for echange1 in range(len(pioche)-1):
+		for echange2 in range(echange1, len(pioche)):
+			pioche2 = pioche[:]
+			pioche2[echange1], pioche2[echange2] = pioche2[echange1], pioche2[echange2]
+			nb_tas = len(reussite_mode_auto(pioche))
+
+			if nb_tas < meilleur_tas:
+				meilleur_tas = nb_tas
+				meilleur_pioche = pioche2
+
+	return meilleur_pioche, nb_tas_depart - meilleur_tas
+
+
+def creer_graphique(nb_sim, nb_cartes=32, niveau_triche=0):
 	""" Crée un graphique établi à partir d'un nombre de simulations données.
 		(fonction auxilière)
 
 		nb_sim (int): Le nombre de simulations
 		nb_cartes (int): Le nombre de cartes du jeu (32 par défaut)
-		pioche_amelioree (bool): Si True, modifie légèrement la pioche pour augmenter les chances
-			de gagner """
+		niveau_triche (int): Le niveau de triche (0 par défaut) """
 
 	figure = plt.figure()
 	figure.canvas.set_window_title("PolyAlliances statistiques")
 
-	plt.plot(probabilite_victoire(nb_sim, nb_cartes, pioche_amelioree))
+	plt.plot(probabilite_victoire(nb_sim, nb_cartes, niveau_triche))
 	plt.title("Probabilité de gagner en fonction du nombre de tas maximum")
 	plt.xlabel("Nombre de tas maximum")
 	plt.ylabel("Probabilité de gagner")
@@ -1305,11 +1339,11 @@ def preparer_statistiques():
 	# on demande le nombre de cartes et de simulations
 	nb_cartes = 32 + 20 * afficher_menu_qcm("Quel jeu ?", "32 cartes", "52 cartes")
 	nb_sim = afficher_menu_entier("Nombre de simulation par tas max", 1, float("inf"))
-	pioche_amelioree = afficher_menu_qcm("Utiliser des pioches améliorées ?", "Non", "Oui")
+	pioche = afficher_menu_qcm("Amélioration de pioche", "Aucune modification", "Echange consécutif", "Echange")
 
-	statistiques_nb_tas(nb_sim, nb_cartes, pioche_amelioree)
+	statistiques_nb_tas(nb_sim, nb_cartes, pioche)
 	dire("Chargement du graphique...")
-	creer_graphique(nb_sim, nb_cartes, pioche_amelioree)
+	creer_graphique(nb_sim, nb_cartes, pioche)
 
 
 def choisir_programme():
@@ -1497,18 +1531,17 @@ def preparer_statistiques_gui(fenetre):
 		fenetre (tkinter.Tk): La fenêtre de jeu """
 
 	# on récupère les données brutes de afficher_menu_stats
-	nb_sim, nb_cartes, pioche_amelioree = afficher_menu_stats(fenetre)
+	nb_sim, nb_cartes, pioche = afficher_menu_stats(fenetre)
 
 	# et on les convertit
 	nb_sim = int(nb_sim)
 	nb_cartes = 32+20*nb_cartes
-	pioche_amelioree = bool(pioche_amelioree)
 
 	# on détruit la fenêtre avant de lancer le programme de statistiques
 	fenetre.destroy()
-	statistiques_nb_tas(nb_sim, nb_cartes, pioche_amelioree)
+	statistiques_nb_tas(nb_sim, nb_cartes, pioche)
 	dire("Chargement du graphique...")
-	creer_graphique(nb_sim, nb_cartes, pioche_amelioree)
+	creer_graphique(nb_sim, nb_cartes, pioche)
 
 
 def choisir_programme_gui(fenetre, images):
