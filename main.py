@@ -12,11 +12,11 @@
 
 import config
 import tkinter
-import time
 
 from console import *
 from gui import *
 from jeu import *
+from stats import *
 
 from utile import deboggue
 
@@ -46,6 +46,8 @@ def reussite_mode_auto(pioche, affichage=False):
 	if affichage:
 		dire("La jeu est terminé !")
 		dire("Il reste {} tas.".format(len(liste_tas)))
+
+	return liste_tas
 
 
 def reussite_mode_manuel(pioche, nb_tas_max=2):
@@ -90,15 +92,11 @@ def reussite_mode_manuel(pioche, nb_tas_max=2):
 			dire("Vous avez quitté la partie !")
 			dire("Voici les cartes qu'il restait dans la pioche")
 			afficher_reussite(pioche)
-			return None
+			return liste_tas
 
 	dire("Le jeu est terminé !")
-	dire("Il vous reste {} tas".format(len(liste_tas)))
 
-	if len(liste_tas) > nb_tas_max:
-		dire("Vous avez perdu !")
-	else:
-		dire("Vous avez gagné !")
+	return liste_tas
 
 
 def lance_reussite(mode, nb_cartes=32, affiche=False, nb_tas_max=2):
@@ -113,7 +111,7 @@ def lance_reussite(mode, nb_cartes=32, affiche=False, nb_tas_max=2):
 		nb_tas_max (int): Nombre de tas restant maximum pour gagner (2 par défaut) """
 
 	while True:	
-		depuis_fichier = bool(demander_qcm("Charger la pioche depuis un fichier ?", "Non", "Oui"))
+		depuis_fichier = demander_qcm("Charger la pioche depuis un fichier ?", "Non", "Oui")
 
 		if depuis_fichier:
 			pioche = init_pioche_fichier(demander_fichier("Entrez le chemin vers le fichier à charger"))
@@ -129,18 +127,30 @@ def lance_reussite(mode, nb_cartes=32, affiche=False, nb_tas_max=2):
 		else:
 			break
 
+	liste_tas = []
+
 	if mode == "auto":
-		reussite_mode_auto(pioche, affiche)
+		liste_tas = reussite_mode_auto(pioche, affiche)
+		dire("Il reste {} tas".format(len(liste_tas)))
+
 	elif mode == "manuel":
-		reussite_mode_manuel(pioche, nb_tas_max)
+		liste_tas = reussite_mode_manuel(pioche, nb_tas_max)
+		dire("Il reste {} tas".format(len(liste_tas)))
+
+		if len(liste_tas) > nb_tas_max:
+			dire("Vous avez perdu !")
+		else:
+			dire("Vous avez gagné !")
 	else:
 		deboggue("Mode non reconnu !")
 
 	if not depuis_fichier:
-		sauve_pioche = bool(demander_qcm("Enregistrer la pioche ?", "Non", "Oui"))
+		sauve_pioche = demander_qcm("Enregistrer la pioche ?", "Non", "Oui")
 
 		if sauve_pioche:
 			ecrire_fichier_reussite(demander_fichier("Entrez le chemin vers le fichier à charger", False), pioche)
+
+	return liste_tas
 
 
 def preparer_reussite():
@@ -150,7 +160,7 @@ def preparer_reussite():
 
 	dire("Bienvenu dans La réussite des alliances !")
 	mode = demander_qcm("Quel mode ?", "Manuel", "Automatique")
-	jeu_type = 32 + 20 * demander_qcm("Quel jeu ?", "32 cartes", "52 cartes")
+	nb_cartes = 32 + 20 * demander_qcm("Quel jeu ?", "32 cartes", "52 cartes")
 
 	if mode:
 		dire("Vous avez choisi le mode automatique")
@@ -163,14 +173,36 @@ def preparer_reussite():
 		affiche = False
 		mode = "manuel"
 
-	lancer_reussite(mode, jeu_type, affiche, tas_max)
+	lance_reussite(mode, nb_cartes, affiche, tas_max)
+
+
+def preparer_statistiques():
+	""" Propose au joueur de choisir le nombre de cartes et de simulations faites pour établir
+			des statistiques. """
+
+	nb_cartes = 32 + 20 * demander_qcm("Quel jeu ?", "32 cartes", "52 cartes")
+	nb_sim = demander_entier("Nombre de simulation par tas max", 1, float("inf"))
+
+	creer_graphique(nb_sim, nb_cartes)
+
+
+def choisir_programme():
+	""" Propose au joueur de choisir entre jouer une partie et simplement lancer le programme de
+			statistiques. """
+
+	prog = demander_qcm("Quel voulez-vous faire ?", "Jouer", "Statistiques")
+
+	if prog:
+		preparer_statistiques()
+	else:
+		preparer_reussite()
 
 
 ###################################################################################################
 ### Mode graphique ################################################################################
 ###################################################################################################
 
-def reussite_mode_auto_gui(fenetre, images, pioche, affichage=False):
+def reussite_mode_auto_gui(fenetre, images, pioche):
 	""" Joue automatiquement la réussite en partant sur la pioche donnée.
 		
 		fenetre (pygame.surface.Surface): La fenêtre de jeu
@@ -188,22 +220,16 @@ def reussite_mode_auto_gui(fenetre, images, pioche, affichage=False):
 	liste_tas = []
 	pioche = pioche[:]
 
-	if affichage:
-		canvas = creer_zone_jeu(fenetre)
-		dessiner_reussite_gui(canvas, images, pioche)
-		fenetre.after(500, tick)
+	canvas = creer_zone_jeu(fenetre)
+	dessiner_reussite_gui(canvas, images, pioche)
+	fenetre.after(500, tick)
 
-		while pioche:
-			redessiner_fenetre(fenetre)
+	while pioche:
+		redessiner_fenetre(fenetre)
 
-		canvas.destroy()
-	else:
-		while pioche:
-			une_etape_reussite(liste_tas, pioche)
+	canvas.destroy()
 
-	message1 = "Le jeu est terminé !"
-	message2 = "Il reste {} tas.".format(len(liste_tas))
-	afficher_popup(fenetre, message1, message2)
+	return liste_tas
 
 
 def reussite_mode_manuel_gui(fenetre, images, pioche, nb_tas_max=2):
@@ -236,16 +262,6 @@ def reussite_mode_manuel_gui(fenetre, images, pioche, nb_tas_max=2):
 	while pioche:
 		redessiner_fenetre(fenetre)
 
-	message1 = "Le jeu est terminé !"
-	message2 = "Il vous reste {} tas".format(len(liste_tas))
-
-	if len(liste_tas) > nb_tas_max:
-		message3 = "Vous avez perdu !"
-	else:
-		message3 = "Vous avez gagné !"
-
-	afficher_popup(fenetre, message1, message2, message3)
-
 	canvas.destroy()
 
 
@@ -273,10 +289,29 @@ def lance_reussite_gui(fenetre, images, mode, nb_cartes=32, affiche=False, nb_ta
 		else:
 			afficher_popup(fenetre, "La pioche choisie est truquée !")
 
+	liste_tas = []
+	message1 = "Le jeu est terminé !"
+	message2 = "Il reste {} tas."
+
 	if mode == "auto":
-		reussite_mode_auto_gui(fenetre, images, pioche, affiche)
+		if affiche:
+			liste_tas = reussite_mode_auto_gui(fenetre, images, pioche)
+		else:
+			liste_tas = reussite_mode_auto(pioche)
+
+		message2.format(len(liste_tas))
+		afficher_popup(fenetre, message1, message2)
+
 	elif mode == "manuel":
-		reussite_mode_manuel_gui(fenetre, images, pioche, nb_tas_max)
+		liste_tas = reussite_mode_manuel_gui(fenetre, images, pioche, nb_tas_max)
+	
+		message2.format(len(liste_tas))
+
+		if len(liste_tas) > nb_tas_max:
+			message3 = "Vous avez perdu !"
+		else:
+			message3 = "Vous avez gagné !"
+		afficher_popup(fenetre, message1, message2, message3)
 	else:
 		deboggue("Mode non reconnu !")
 
@@ -285,11 +320,13 @@ def lance_reussite_gui(fenetre, images, mode, nb_cartes=32, affiche=False, nb_ta
 	if nom_fichier:
 		ecrire_fichier_reussite(creer_chemin("ressources", "pioches", nom_fichier), pioche)
 
+	return liste_tas
+
 
 def preparer_reussite_gui(fenetre, images):
 	""" Même chose que preparer_reussite mais en mode graphique.
 
-		fenetre (pygame.surface.Surface): La fenêtre de jeu
+		fenetre (tkinter.Tk): La fenêtre de jeu
 		images (dict): Le dictionnaire des images du jeu """
 
 	modes = ("manuel", "auto")
@@ -303,6 +340,34 @@ def preparer_reussite_gui(fenetre, images):
 	lance_reussite_gui(fenetre, images, mode, nb_cartes, affiche, nb_tas_max)
 
 
+def preparer_statistiques_gui(fenetre):
+	""" Même chose que preparer_statistiques mais en mode graphique.
+
+		fenetre (tkinter.Tk): La fenêtre de jeu """
+
+	nb_sim, nb_cartes = demander_reglages_stats(fenetre)
+
+	nb_sim = int(nb_sim)
+	nb_cartes = 32+20*nb_cartes
+
+	fenetre.destroy()
+	creer_graphique(nb_sim, nb_cartes)
+
+
+def choisir_programme_gui(fenetre, images):
+	""" Même chose que choisir_programme mais en mode graphique.
+
+		fenetre (tkinter.Tk): La fenêtre de jeu
+		images (dict): Le dictionnaire des images du jeu """
+
+	prog = demander_programme(fenetre)
+
+	if prog:
+		preparer_statistiques_gui(fenetre)
+	else:
+		preparer_reussite_gui(fenetre, images)
+
+
 ###################################################################################################
 ### Demarrage du jeu ##############################################################################
 ###################################################################################################
@@ -312,13 +377,15 @@ def main():
 		Ne prend aucun argument. """
 	
 	if config.FORCE_CONSOLE:
+		deboggue("Le jeu est en mode console")
+		choisir_programme()
+	else:
 		deboggue("Le jeu est en mode graphique")
 		fenetre = creer_fenetre()
 		images = charge_images()
-		preparer_reussite_gui(fenetre, images)
-	else:
-		deboggue("Le jeu est en mode console")
-		preparer_reussite()
+		choisir_programme_gui(fenetre, images)
+
+	deboggue("Arrêt normal")
 
 
 if __name__ == "__main__":

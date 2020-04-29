@@ -279,8 +279,21 @@ def afficher_popup(fenetre, *messages):
 	fenetre.wait_window(popup)
 
 
+def demander_programme(fenetre):
+	""" Crée un menu proposant au joueur de choisir un programme.
+
+		fenetre (tkinter.Tk): La fenêtre de jeu """
+
+	cadre = creer_categorie(fenetre, "Programme")
+	qcm_pro, var_pro = creer_qcm_simple(cadre, "Que voulez-vous faire ?", "Jouer", "Statistiques")
+	creer_menu(fenetre, cadre)
+	cadre.destroy()
+
+	return var_pro.get()
+
+
 def demander_reglages(fenetre):
-	""" Créer un menu proposant au joueur de changer les réglages initiaux du jeu.
+	""" Crée un menu proposant au joueur de changer les réglages initiaux du jeu.
 
 		fenetre (tkinter.Tk): La fenêtre de jeu """
 
@@ -299,7 +312,7 @@ def demander_reglages(fenetre):
 			activer_categorie(saisi_tas)
 			var_aff.set(1)
 
-	cadre = creer_categorie(fenetre, "Réglages", "n")
+	cadre = creer_categorie(fenetre, "Jouer", "n")
 	qcm_mod, var_mod = creer_qcm_simple(cadre, "Mode de jeu", "Manuel", "Automatique")
 	qcm_jeu, var_jeu = creer_qcm_simple(cadre, "Nombre de cartes", "32 cartes", "52 cartes")
 	qcm_aff, var_aff = creer_qcm_simple(cadre, "Activer l'affichage", "Non", "Oui")
@@ -307,12 +320,33 @@ def demander_reglages(fenetre):
 
 	var_mod.trace("w", quand_mode_change)
 	var_tas.set("2")
-
 	quand_mode_change()
 	creer_menu(fenetre, cadre)
-
 	cadre.destroy()
+
 	return var_mod.get(), var_jeu.get(), var_aff.get(), var_tas.get()
+
+
+def demander_reglages_stats(fenetre):
+	""" Affiche un menu proposant au joueur de régler la simulation.
+
+		fenetre (tkinter.Tk): La fenêtre de jeu """
+
+	def quand_tape(texte):
+		if texte:
+			if texte.isdigit():
+				return int(texte) > 0
+		return False
+
+	cadre = creer_categorie(fenetre, "Statistiques")
+	qcm_jeu, var_jeu = creer_qcm_simple(cadre, "Nombre de cartes", "32 cartes", "52 cartes")
+	saisi_sim, var_sim = creer_champs_saisi(cadre, "Nombre de simulation par tas max", quand_tape, "Entier positif")
+
+	var_sim.set("1")
+	creer_menu(fenetre, cadre)
+	cadre.destroy()
+
+	return var_sim.get(), var_jeu.get()
 
 
 def demander_charger_pioche(fenetre):
@@ -337,7 +371,15 @@ def demander_charger_pioche(fenetre):
 	quand_qcm_change()
 	creer_menu(fenetre, cadre)
 
-	pioche = pioches[var_pio.curselection()[0]]
+	if var_pio.curselection():
+		pioche = pioches[var_pio.curselection()[0]]
+	elif pioches:
+		deboggue("Aucune pioche sélectionnée ! Utilisation de la première pioche")
+		pioche = pioches[0]
+	else:
+		deboggue("Aucune pioche ne peut être chargée ! Passage en mode aléatoire")
+		var_fic.set(0)
+
 	cadre.destroy()
 
 	if var_fic.get():

@@ -25,7 +25,7 @@ def res_multi_simulation(nb_sim, nb_cartes=32):
 	resultats = []
 
 	for sim in range(nb_sim):
-		deboggue("Début de la simulation n" + str(sim))
+		deboggue("Simulation n" + str(sim))
 		pioche = init_pioche_alea(nb_cartes)
 		liste_tas = []
 		
@@ -79,6 +79,7 @@ def probabilite_victoire(nb_sim, nb_cartes=32):
 	victoires = []
 
 	for nb_tas_max in range(nb_cartes):
+		deboggue("Calcul du taux de victoire pour {} tas max".format(nb_tas_max))
 		resultats = res_multi_simulation(nb_sim, nb_cartes)
 		nb_victoires = sum(resultat <= nb_tas_max for resultat in resultats)
 		victoires.append(nb_victoires / len(resultats))

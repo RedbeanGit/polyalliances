@@ -39,7 +39,7 @@ def demander_qcm(titre, *choix):
 	entree = demander()
 
 	while not nombre_valide(entree, 0, len(choix)-1):
-		dire("Vous devez entrer un entier compris entre {} et {}.".format(mini, maxi))
+		dire("Vous devez entrer un entier compris entre {} et {}.".format(0, len(choix)-1))
 		entree = demander()
 
 	return int(entree)
