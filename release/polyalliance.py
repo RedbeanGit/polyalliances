@@ -1093,14 +1093,6 @@ def creer_chemin(dossier, *sous_dossiers):
 	return os.path.join(dossier, *sous_dossiers)
 
 
-def obtenir_nom_reel(nom_fichier):
-	""" Renvoie le nom du fichier sans extension.
-
-		nom_fichier (str): Le nom du fichier """
-		
-	return os.path.splitext(nom_fichier)[0]
-
-
 def arreter():
 	""" Arrête le jeu sans attendre. """
 
