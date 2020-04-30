@@ -46,10 +46,10 @@ import tkinter
 ###################################################################################################
 
 DEBUG=False
-FORCE_CONSOLE=True
+FORCE_CONSOLE=False
 VALEURS=("A", "R", "D", "V", "10", "9", "8", "7", "6", "5", "4", "3", "2")
 COULEURS={"P": "♠", "K": "♦", "C": "♥", "T": "♣"}
-COULEUR_DOS=("bleu", "gris", "jaune", "rouge", "vert", "violet")
+COULEUR_DOS="bleu"
 COULEUR_FOND="#004B14"
 TAILLE_FENETRE=(1024, 576)
 TAILLE_CARTE=(88, 128)
@@ -316,7 +316,7 @@ def dessiner_reussite(canvas, images, reussite, interact=lambda x: None):
 			x = POS_DEPART[0]
 
 	# On dessine la pioche en dernier
-	carte = {"valeur": "dos", "couleur": random.choice(COULEUR_DOS)}
+	carte = {"valeur": "dos", "couleur": COULEUR_DOS}
 	quand_dessine(carte, x, y, -1)
 
 
@@ -642,7 +642,7 @@ def afficher_menu_charge_pioche(fenetre):
 
 	creer_menu(fenetre, cadre)
 	sel = var_pio.curselection()
-	canvas.destroy()
+	cadre.destroy()
 
 	# si le joueur a selectionné une pioche dans la liste
 	if sel:
@@ -829,24 +829,19 @@ def verifier_pioche(pioche, nb_cartes=32):
 	if len(pioche) != nb_cartes:
 		return False
 
-	# on fait une copie de la pioche avant de la vérifier
-	pioche = pioche[:]
 	testees = []
 
-	# tant qu'il reste des cartes
-	while pioche:
-		# on pioche une carte
-		carte = pioche.pop()
-
-		# si la carte en cours a déjà été retournée alors on s'arrête
+	# pour chaque carte de la pioche
+	for carte in pioche:
+		# si la carte en cours a déjà été testée alors on s'arrête
 		if carte in testees:
-			break
+			return False
 
 		# sinon on l'ajoute à la liste des cartes testées
 		testees.append(carte)
 
-	# renvoie True si toutes les cartes ont pu être testées
-	return len(testees) == nb_cartes
+	# renvoie True car arrivé ici, on sait que toutes les cartes sont uniques
+	return True
 
 
 def chaine_est_pioche(chaine):
