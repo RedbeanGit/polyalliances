@@ -802,6 +802,7 @@ def une_etape_reussite(liste_tas, pioche, affiche=False):
 
 	# on affiche une première fois les cartes
 	if affiche:
+		dire("Une carte a été piochée")
 		afficher_reussite(liste_tas)
 
 	# numéro du tas à faire sauter
@@ -810,6 +811,7 @@ def une_etape_reussite(liste_tas, pioche, affiche=False):
 	while num_tas < len(liste_tas) - 1:
 		if saut_si_possible(liste_tas, num_tas):
 			if affiche:
+				dire("Le tas n{} a sauté".format(num_tas))
 				afficher_reussite(liste_tas)
 	
 			# si un saut est fait on recommence depuis le début à faire sauter des tas
@@ -1274,7 +1276,7 @@ def lance_reussite(mode, nb_cartes=32, affiche=False, nb_tas_max=2):
 
 	if mode == "auto":
 		liste_tas = reussite_mode_auto(pioche, affiche)
-		dire("La jeu est terminé !")
+		dire("La partie est terminée !")
 		dire("Il reste {} tas.".format(len(liste_tas)))
 	elif mode == "manuel":
 		liste_tas = reussite_mode_manuel(pioche, nb_tas_max)
@@ -1315,7 +1317,6 @@ def preparer_reussite():
 		mode = "manuel"
 
 	liste_tas = lance_reussite(mode, nb_cartes, affiche, tas_max)
-	dire("Cette partie s'est terminée avec {} tas".format(len(liste_tas)))
 
 
 def preparer_statistiques():
