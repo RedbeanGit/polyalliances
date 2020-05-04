@@ -8,33 +8,7 @@
 # Version Python: 3.8
 #
 
-###################################################################################################
-### Explication ###################################################################################
-###################################################################################################
-
-""" 
-	Le code du jeu est réparti en 8 parties
-		- Explication: commentaires sur l'organisation du programme
-		- Constantes: constantes du jeu
-		- Mode console: fonctions liées à l'affichage en console
-		- Mode graphique: fonctions liées à l'affichage graphique
-		- Utile jeu: fonctions centrales du jeu utilisées par l'ensemble du programme
-		- Statistique: fonctions liées aux simulations et statistiques
-		- Fichier: fonctions liées aux fichiers et à l'execution du script
-		- Principal: fonctions principales du jeu (lancent toutes les autres)
-	
-	Les fonctions non-obligatoires comportent les commentaires suivants:
-		- (fonction extension) = Cette fonction est demandée pour une extension
-		- (fonction auxilière) = Cette fonction simplifie le code global
-
-	Pour activer le mode graphique, définissez FORCE_CONSOLE à False
-"""
-
-try:
-	import matplotlib.pyplot as plt
-except ImportError:
-	print("Matplotlib n'est pas installé ! Le mode statistique ne fonctionnera pas")
-
+import matplotlib.pyplot as plt
 import os
 import random
 import sys
@@ -42,22 +16,23 @@ import tkinter
 
 
 ###################################################################################################
-### Constantes ####################################################################################
+### Explication ###################################################################################
 ###################################################################################################
 
-DEBUG=False
-FORCE_CONSOLE=False
-VALEURS=("A", "R", "D", "V", "10", "9", "8", "7", "6", "5", "4", "3", "2")
-COULEURS={"P": "♠", "K": "♦", "C": "♥", "T": "♣"}
-COULEUR_DOS="bleu"
-COULEUR_FOND="#004B14"
-TAILLE_FENETRE=(1024, 576)
-TAILLE_CARTE=(88, 128)
-POS_DEPART=(45, 20)
-MAX_CARTE_LIGNE=10
-MARGE=5
-NOM_ORDI="JEU"
-NOM_JOUEUR="VOUS"
+# Le code du jeu est réparti en 7 parties
+#	- Explication: commentaires sur l'organisation du programme
+#	- Mode console: fonctions liées à l'affichage en console
+#	- Mode graphique: fonctions liées à l'affichage graphique
+#	- Utile jeu: fonctions centrales du jeu utilisées par l'ensemble du programme
+#	- Statistique: fonctions liées aux simulations et statistiques
+#	- Fichier: fonctions liées aux fichiers et à l'execution du script
+#	- Principal: fonctions principales du jeu (lancent toutes les autres)
+#
+# Les fonctions non-obligatoires comportent les commentaires suivants:
+#	- (fonction extension) = Cette fonction est demandée pour une extension
+#	- (fonction auxilière) = Cette fonction simplifie le code global
+#
+#	Pour activer le mode graphique, définissez FORCE_CONSOLE à False
 
 
 ###################################################################################################
@@ -152,7 +127,7 @@ def dire(msg):
 
 		msg (str): Le message à afficher """
 
-	print(NOM_ORDI + " > " + msg)
+	print("JEU > " + msg)
 
 
 def demander():
@@ -161,7 +136,7 @@ def demander():
 
 	# try/except permet d'attraper un arrêt forcé lors d'un appui sur CTRL+C
 	try:
-		return input(NOM_JOUEUR + " > ")
+		return input("VOUS > ")
 	except KeyboardInterrupt:
 		deboggue("Arrêt par Ctrl+C du jeu")
 		arreter()
@@ -198,6 +173,8 @@ def deboggue(msg):
 
 		msg (str): Le message à afficher """
 
+	# Changer DEBUG à True pour activer les messages de deboggage
+	DEBUG = False
 	if DEBUG:
 		print("DEBUG > {}".format(msg))
 
@@ -262,7 +239,8 @@ def dessiner_texte(canvas, texte):
 		canvas (tkinter.Canvas): La zone de jeu
 		texte (str): La zone à afficher """
 
-	l, h = TAILLE_FENETRE
+	# taille de la fenêtre
+	l, h = 1024, 576
 	canvas.create_text(int(l*0.5), int(h*0.9), text=texte, fill="white", font=("Arial", 18))
 
 
@@ -295,6 +273,12 @@ def dessiner_reussite(canvas, images, reussite, interact=lambda x: None):
 		interact (function, method): Une fonction à appeler lors du clic sur une carte (lambda x:
 			None par défaut). Le numéro du tas cliqué sera passé en paramètre (-1 pour la pioche) """
 
+	# constantes
+	TAILLE_CARTE = (88, 128)
+	POS_DEPART = (45, 20)
+	MAX_CARTE_LIGNE = 10
+	MARGE = 5
+
 	# cette fonction est appelée par canvas.after après un certain délai
 	def quand_dessine(carte, x, y, num_tas):
 		item = dessiner_carte(canvas, images, carte, x, y)
@@ -302,6 +286,7 @@ def dessiner_reussite(canvas, images, reussite, interact=lambda x: None):
 		# mais nous n'en avons pas besoin
 		canvas.tag_bind(item, "<ButtonPress-1>", lambda x: interact(num_tas))
 
+	# position initiale
 	x, y = POS_DEPART
 
 	for i, carte in enumerate(reussite):
@@ -316,7 +301,7 @@ def dessiner_reussite(canvas, images, reussite, interact=lambda x: None):
 			x = POS_DEPART[0]
 
 	# On dessine la pioche en dernier
-	carte = {"valeur": "dos", "couleur": COULEUR_DOS}
+	carte = {"valeur": "dos", "couleur": "bleu"}
 	quand_dessine(carte, x, y, -1)
 
 
@@ -329,10 +314,10 @@ def creer_zone_jeu(parent):
 	# pour éviter d'écrire toutes les options sur une seule ligne (trop long)
 	# on les note toutes dans un dictionnaire qui sera passé en paramètre
 	options = {
-		"width": TAILLE_FENETRE[0],
-		"height": TAILLE_FENETRE[1],
+		"width": 1024,
+		"height": 576,
 		"highlightthickness": 0,
-		"bg": COULEUR_FOND
+		"bg": "#004B14"
 	}
 	canvas = tkinter.Canvas(parent, **options)
 	canvas.pack()
@@ -701,9 +686,10 @@ def carte_to_chaine(carte):
 	""" Renvoie une chaine de caractère représentant une carte donnée.
 		
 		carte (dict): La carte à représenter """
-	
+
+	COULEURS = {"P": 9824, "K": 9826, "C": 9825, "T": 9827}
 	# rjust(2) permet d'ajouter des "0" à gauche si la chaine fait moins de 2 caractères
-	return str(carte["valeur"]).rjust(2) + COULEURS[carte["couleur"]]
+	return str(carte["valeur"]).rjust(2) + chr(COULEURS[carte["couleur"]])
 
 
 def carte_from_chaine(chaine):
@@ -728,13 +714,11 @@ def genere_jeu(nb_cartes=32):
 
 		nb_cartes (int): Le nombre de cartes du jeu (32 par défaut) """
 
+	VALEURS = ("A", "R", "D", "V", 10, 9, 8, 7, 6, 5, 4, 3, 2)
+	COULEURS = ("P", "K", "C", "T")
 	cartes = []
 
 	for valeur in VALEURS:
-		# on converti la valeur en un entier si c'est ni un As, ni un Roi, ni une Dame, ni un Valet
-		if valeur not in ("V", "D", "R", "A"):
-			valeur = int(valeur)
-
 		for couleur in COULEURS:
 			cartes.append({"valeur": valeur, "couleur": couleur})
 
@@ -787,7 +771,7 @@ def piocher(liste_tas, pioche):
 
 	# on ne pioche uniquement s'il reste des cartes dans la pioche
 	if pioche:
-		liste_tas.append(pioche.pop())
+		liste_tas.append(pioche.pop(0))
 
 
 def une_etape_reussite(liste_tas, pioche, affiche=False):
@@ -802,7 +786,6 @@ def une_etape_reussite(liste_tas, pioche, affiche=False):
 
 	# on affiche une première fois les cartes
 	if affiche:
-		dire("Une carte a été piochée")
 		afficher_reussite(liste_tas)
 
 	# numéro du tas à faire sauter
@@ -811,7 +794,6 @@ def une_etape_reussite(liste_tas, pioche, affiche=False):
 	while num_tas < len(liste_tas) - 1:
 		if saut_si_possible(liste_tas, num_tas):
 			if affiche:
-				dire("Le tas n{} a sauté".format(num_tas))
 				afficher_reussite(liste_tas)
 	
 			# si un saut est fait on recommence depuis le début à faire sauter des tas
@@ -827,6 +809,9 @@ def verifier_pioche(pioche, nb_cartes=32):
 		pioche (list): La liste des cartes de la pioche
 		nb_cartes (int): Le nombre de cartes du jeu (32 par défaut) """
 
+	VALEURS = ("A", "R", "D", "V", "10", "9", "8", "7", "6", "5", "4", "3", "2")
+	COULEURS = ("P", "K", "C", "T")
+
 	# s'il n'y a pas le bon nombre de carte on peut déjà retourner False
 	if len(pioche) != nb_cartes:
 		return False
@@ -837,6 +822,10 @@ def verifier_pioche(pioche, nb_cartes=32):
 	for carte in pioche:
 		# si la carte en cours a déjà été testée alors on s'arrête
 		if carte in testees:
+			return False
+		if str(carte["valeur"]) not in VALEURS[:nb_cartes // 4]:
+			return False
+		if carte["couleur"] not in COULEURS:
 			return False
 
 		# sinon on l'ajoute à la liste des cartes testées
@@ -852,6 +841,9 @@ def chaine_est_pioche(chaine):
 
 		chaine (str): La chaine à tester """
 		
+	VALEURS = ("A", "R", "D", "V", "10", "9", "8", "7", "6", "5", "4", "3", "2")
+	COULEURS = ("P", "K", "C", "T")
+
 	for carte in chaine.split():
 		# les chaines vides sont acceptées (exemple à la fin du fichier)
 		if carte:
@@ -1003,9 +995,9 @@ def meilleur_echange_consecutif(pioche):
 	for echange in range(len(pioche)-1):
 		pioche2 = pioche[:]
 		pioche2[echange], pioche2[echange+1] = pioche2[echange+1], pioche2[echange]
-		nb_tas = len(reussite_mode_auto(pioche))
+		nb_tas = len(reussite_mode_auto(pioche2))
 
-		if nb_tas < meilleur_tas:
+		if nb_tas <= meilleur_tas:
 			meilleur_tas = nb_tas
 			meilleur_pioche = pioche2
 
@@ -1099,7 +1091,7 @@ def arreter():
 	""" Arrête le jeu sans attendre. """
 
 	deboggue("Fin du jeu")
-	sys.exit()
+	os._exit(0)
 
 
 def chemin_valide(chemin):
@@ -1167,7 +1159,6 @@ def reussite_mode_auto(pioche, affichage=False):
 	pioche = pioche[:]
 
 	if affichage:
-		dire("Voici la pioche")
 		afficher_reussite(pioche)
 
 	# tant qu'il reste des cartes
@@ -1552,7 +1543,8 @@ def main():
 	""" Fonction principale. Initialise l'interface et lance le jeu.
 		Ne prend aucun argument.
 		(fonction auxiliaire) """
-	
+	FORCE_CONSOLE = False
+
 	if FORCE_CONSOLE:
 		deboggue("Le jeu est en mode console")
 		choisir_programme()
