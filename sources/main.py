@@ -263,6 +263,7 @@ def reussite_mode_manuel_gui(fenetre, images, pioche, nb_tas_max=2):
 		redessiner_fenetre(fenetre)
 
 	canvas.destroy()
+	return liste_tas
 
 
 def lance_reussite_gui(fenetre, images, mode, nb_cartes=32, affiche=False, nb_tas_max=2):
@@ -299,13 +300,13 @@ def lance_reussite_gui(fenetre, images, mode, nb_cartes=32, affiche=False, nb_ta
 		else:
 			liste_tas = reussite_mode_auto(pioche)
 
-		message2.format(len(liste_tas))
+		message2 = message2.format(len(liste_tas))
 		afficher_popup(fenetre, message1, message2)
 
 	elif mode == "manuel":
 		liste_tas = reussite_mode_manuel_gui(fenetre, images, pioche, nb_tas_max)
 	
-		message2.format(len(liste_tas))
+		message2 = message2.format(len(liste_tas))
 
 		if len(liste_tas) > nb_tas_max:
 			message3 = "Vous avez perdu !"

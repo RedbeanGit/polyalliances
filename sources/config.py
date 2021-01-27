@@ -9,7 +9,7 @@
 """ Contient toutes les constantes du jeu """
 
 DEBUG=True
-FORCE_CONSOLE=True
+FORCE_CONSOLE=False
 VALEURS=("A", "R", "D", "V", "10", "9", "8", "7", "6", "5", "4", "3", "2")
 COULEURS={"P": "♠", "K": "♦", "C": "♥", "T": "♣"}
 COULEUR_DOS=("bleu", "gris", "jaune", "rouge", "vert", "violet")
